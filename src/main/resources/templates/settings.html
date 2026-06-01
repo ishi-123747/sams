@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Settings | SAMS</title>
+    <link rel="stylesheet" th:href="@{/css/sams-global.css}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .notif-item { display:flex; align-items:center; gap:12px; padding:12px 0; border-bottom:1px solid #f1f5f9; }
+        .notif-item:last-child { border-bottom:none; }
+        .notif-item input[type=checkbox] { width:18px; height:18px; accent-color:#006d77; cursor:pointer; flex-shrink:0; }
+        .notif-item span { font-size:14px; color:#444; }
+        .toggle-switch { position:relative; width:44px; height:24px; flex-shrink:0; }
+        .toggle-switch input { opacity:0; width:0; height:0; }
+        .slider { position:absolute; cursor:pointer; inset:0; background:#cbd5e1; border-radius:24px; transition:.3s; }
+        .slider:before { content:''; position:absolute; width:18px; height:18px; left:3px; bottom:3px; background:white; border-radius:50%; transition:.3s; }
+        .toggle-switch input:checked + .slider { background:#006d77; }
+        .toggle-switch input:checked + .slider:before { transform:translateX(20px); }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+    <main class="main-content">
+        <div class="page-header">
+            <div><h1>⚙️ Settings</h1><p>Manage your SAMS preferences and account</p></div>
+            <button class="save-btn" onclick="saveSettings()"><i class="fas fa-save"></i> Save Changes</button>
+        </div>
+        <div class="settings-grid">
+
+            <div class="settings-card">
+                <h3><i class="fas fa-user-circle"></i> Profile Settings</h3>
+                <div class="form-group" style="margin-bottom:12px;">
+                    <label style="font-size:12px;color:#888;font-weight:600;">Full Name</label>
+                    <input type="text" value="Admin User">
+                </div>
+                <div class="form-group" style="margin-bottom:12px;">
+                    <label style="font-size:12px;color:#888;font-weight:600;">Email</label>
+                    <input type="email" value="admin@sams.com">
+                </div>
+                <div class="form-group" style="margin-bottom:16px;">
+                    <label style="font-size:12px;color:#888;font-weight:600;">Phone</label>
+                    <input type="text" placeholder="Phone Number">
+                </div>
+                <button class="card-btn" onclick="showToast('Profile updated!','success')">Update Profile</button>
+            </div>
+
+            <div class="settings-card">
+                <h3><i class="fas fa-lock"></i> Security</h3>
+                <div class="form-group" style="margin-bottom:12px;">
+                    <label style="font-size:12px;color:#888;font-weight:600;">Current Password</label>
+                    <input type="password" placeholder="Current Password">
+                </div>
+                <div class="form-group" style="margin-bottom:12px;">
+                    <label style="font-size:12px;color:#888;font-weight:600;">New Password</label>
+                    <input type="password" placeholder="New Password">
+                </div>
+                <div class="form-group" style="margin-bottom:16px;">
+                    <label style="font-size:12px;color:#888;font-weight:600;">Confirm Password</label>
+                    <input type="password" placeholder="Confirm Password">
+                </div>
+                <button class="card-btn" onclick="showToast('Password changed!','success')">Change Password</button>
+            </div>
+
+            <div class="settings-card">
+                <h3><i class="fas fa-bell"></i> Notifications</h3>
+                <div class="notif-item">
+                    <label class="toggle-switch"><input type="checkbox" checked><span class="slider"></span></label>
+                    <span>Email Notifications</span>
+                </div>
+                <div class="notif-item">
+                    <label class="toggle-switch"><input type="checkbox" checked><span class="slider"></span></label>
+                    <span>Booking Alerts</span>
+                </div>
+                <div class="notif-item">
+                    <label class="toggle-switch"><input type="checkbox"><span class="slider"></span></label>
+                    <span>Maintenance Alerts</span>
+                </div>
+                <div class="notif-item">
+                    <label class="toggle-switch"><input type="checkbox" checked><span class="slider"></span></label>
+                    <span>Payment Reminders</span>
+                </div>
+                <div class="notif-item">
+                    <label class="toggle-switch"><input type="checkbox"><span class="slider"></span></label>
+                    <span>Overdue Alerts</span>
+                </div>
+            </div>
+
+            <div class="settings-card">
+                <h3><i class="fas fa-server"></i> System Settings</h3>
+                <div class="form-group" style="margin-bottom:12px;">
+                    <label style="font-size:12px;color:#888;font-weight:600;">Language</label>
+                    <select><option>English</option><option>Hindi</option><option>Telugu</option></select>
+                </div>
+                <div class="form-group" style="margin-bottom:12px;">
+                    <label style="font-size:12px;color:#888;font-weight:600;">Currency</label>
+                    <select><option>Indian Rupee (₹)</option><option>USD ($)</option></select>
+                </div>
+                <div class="form-group" style="margin-bottom:16px;">
+                    <label style="font-size:12px;color:#888;font-weight:600;">Theme</label>
+                    <select><option>Light Theme</option><option>Dark Theme</option></select>
+                </div>
+                <button class="card-btn" onclick="showToast('Settings saved!','success')">Apply Settings</button>
+            </div>
+
+        </div>
+    </main>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+    function showToast(msg,type='success'){const t=document.getElementById('toast');t.textContent=msg;t.className='toast '+type+' show';setTimeout(()=>t.classList.remove('show'),3000);}
+    function saveSettings(){showToast('All settings saved!','success');}
+</script>
+</body>
+</html>

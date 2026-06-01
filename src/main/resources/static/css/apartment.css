@@ -1,0 +1,298 @@
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:'Segoe UI',sans-serif;
+}
+
+body{
+    background:#f4f8fb;
+}
+
+.container{
+    display:flex;
+    min-height:100vh;
+}
+
+/* SIDEBAR */
+
+.sidebar{
+    width:270px;
+    background:linear-gradient(
+            180deg,
+            #004353,
+            #006d77,
+            #008891
+    );
+
+    color:white;
+    padding:25px;
+    position:fixed;
+    left:0;
+    top:0;
+    bottom:0;
+
+    box-shadow:5px 0 20px rgba(0,0,0,.12);
+}
+
+.logo{
+    font-size:28px;
+    font-weight:700;
+    margin-bottom:40px;
+    text-align:center;
+}
+
+.sidebar ul{
+    list-style:none;
+}
+
+.sidebar li{
+    margin-bottom:10px;
+}
+
+.sidebar a{
+    text-decoration:none;
+    color:white;
+
+    display:flex;
+    align-items:center;
+    gap:12px;
+
+    padding:14px 18px;
+    border-radius:12px;
+
+    transition:.3s;
+}
+
+.sidebar a:hover{
+    background:rgba(255,255,255,.15);
+    transform:translateX(5px);
+}
+
+.active a{
+    background:white;
+    color:#004353;
+    font-weight:600;
+}
+
+/* MAIN */
+
+.main{
+    margin-left:270px;
+    width:100%;
+    padding:35px;
+}
+
+.topbar{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+
+    margin-bottom:25px;
+}
+
+.topbar h1{
+    color:#004353;
+}
+
+.add-btn{
+    border:none;
+    background:#004353;
+    color:white;
+
+    padding:12px 20px;
+
+    border-radius:12px;
+
+    cursor:pointer;
+    font-weight:600;
+
+    transition:.3s;
+}
+
+.add-btn:hover{
+    background:#006d77;
+    transform:translateY(-2px);
+}
+
+/* SEARCH */
+
+.search-box{
+    background:white;
+
+    border-radius:15px;
+
+    padding:15px 20px;
+
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+
+    margin-bottom:30px;
+
+    box-shadow:0 5px 20px rgba(0,0,0,.05);
+}
+
+.search-box input{
+    border:none;
+    outline:none;
+
+    width:100%;
+    font-size:15px;
+}
+
+/* APARTMENT GRID */
+
+.apartment-grid{
+    display:grid;
+
+    grid-template-columns:
+            repeat(auto-fill,minmax(320px,1fr));
+
+    gap:25px;
+}
+
+/* CARD */
+
+.apartment-card{
+    background:white;
+
+    border-radius:20px;
+
+    overflow:hidden;
+
+    box-shadow:0 8px 25px rgba(0,0,0,.08);
+
+    transition:.3s;
+}
+
+.apartment-card:hover{
+    transform:translateY(-8px);
+
+    box-shadow:0 15px 35px rgba(0,0,0,.12);
+}
+
+.apartment-card img{
+    width:100%;
+    height:220px;
+    object-fit:cover;
+}
+
+.card-body{
+    padding:20px;
+}
+
+.card-body h3{
+    color:#004353;
+    margin-bottom:12px;
+}
+
+/* STATUS */
+
+.status{
+    display:inline-block;
+
+    padding:6px 14px;
+
+    border-radius:30px;
+
+    font-size:13px;
+    font-weight:600;
+
+    margin-bottom:18px;
+}
+
+.available{
+    background:#d4edda;
+    color:#1b7a38;
+}
+
+.occupied{
+    background:#cfe2ff;
+    color:#084298;
+}
+
+.reserved{
+    background:#fff3cd;
+    color:#997404;
+}
+
+.maintenance{
+    background:#f8d7da;
+    color:#842029;
+}
+
+/* INFO */
+
+.info p{
+    margin-bottom:10px;
+    color:#555;
+
+    display:flex;
+    align-items:center;
+    gap:10px;
+}
+
+.info i{
+    color:#006d77;
+}
+
+/* ACTIONS */
+
+.actions{
+    display:flex;
+    justify-content:space-between;
+
+    margin-top:20px;
+}
+
+.actions button{
+    border:none;
+
+    width:50px;
+    height:50px;
+
+    border-radius:12px;
+
+    cursor:pointer;
+
+    font-size:18px;
+
+    transition:.3s;
+}
+
+.view{
+    background:#dbeafe;
+    color:#2563eb;
+}
+
+.edit{
+    background:#dcfce7;
+    color:#16a34a;
+}
+
+.delete{
+    background:#fee2e2;
+    color:#dc2626;
+}
+
+.actions button:hover{
+    transform:scale(1.08);
+}
+
+/* RESPONSIVE */
+
+@media(max-width:900px){
+
+    .sidebar{
+        display:none;
+    }
+
+    .main{
+        margin-left:0;
+    }
+}
+/* === LAYOUT FIX === */
+.container { display: flex; min-height: 100vh; }
+.main-content { margin-left: 270px; padding: 30px; width: 100%; background: #f5f7fa; min-height: 100vh; }
+.main { margin-left: 270px; padding: 30px; width: 100%; }

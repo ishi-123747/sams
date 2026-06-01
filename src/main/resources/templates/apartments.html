@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Apartments | SAMS</title>
+    <link rel="stylesheet" th:href="@{/css/sams-global.css}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .apt-img{width:100%;height:150px;object-fit:cover;border-radius:10px;margin-bottom:12px;}
+        .apt-no-img{width:100%;height:150px;border-radius:10px;margin-bottom:12px;background:linear-gradient(135deg,#e2e8f0,#cbd5e1);display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:36px;}
+    </style>
+</head>
+<body>
+<div class="container">
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+    <main class="main-content">
+
+        <div class="topbar">
+            <div><h1>🏢 Apartment Management</h1><p>View and manage all apartments</p></div>
+            <button class="add-btn" onclick="document.getElementById('addAptModal').classList.add('active')">
+                <i class="fas fa-plus"></i> Add Apartment
+            </button>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card"><i class="fas fa-building"></i><div><h2 th:text="${total}">0</h2><p>Total</p></div></div>
+            <div class="stat-card"><i class="fas fa-check-circle"></i><div><h2 th:text="${occupied}">0</h2><p>Occupied</p></div></div>
+            <div class="stat-card"><i class="fas fa-door-open"></i><div><h2 th:text="${vacant}">0</h2><p>Vacant</p></div></div>
+            <div class="stat-card"><i class="fas fa-tools"></i><div><h2 th:text="${maintenance}">0</h2><p>Maintenance</p></div></div>
+        </div>
+
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="Search apartment, location or tenant..." oninput="filterCards()">
+            <button><i class="fas fa-search"></i></button>
+        </div>
+
+        <div class="apartment-grid" id="aptGrid">
+            <div th:each="apt : ${apartments}" class="apartment-card"
+                 th:attr="data-name=${apt.apartmentName},
+                           data-id=${apt.id},
+                           data-num=${apt.apartmentNumber},
+                           data-aptname=${apt.apartmentName},
+                           data-loc=${apt.location},
+                           data-rooms=${apt.rooms},
+                           data-rent=${apt.rent},
+                           data-deposit=${apt.deposit},
+                           data-status=${apt.status},
+                           data-tenant=${apt.tenantName},
+                           data-img=${apt.imageUrl}">
+
+                <div th:if="${apt.imageUrl != null and !#strings.isEmpty(apt.imageUrl)}">
+                    <img class="apt-img" th:src="${apt.imageUrl}" alt="Apartment Photo">
+                </div>
+                <div th:unless="${apt.imageUrl != null and !#strings.isEmpty(apt.imageUrl)}" class="apt-no-img">
+                    <i class="fas fa-building"></i>
+                </div>
+
+                <div class="apt-header">
+                    <h3><span th:text="${apt.apartmentNumber}"></span> – <span th:text="${apt.apartmentName}"></span></h3>
+                    <span th:if="${apt.status == 'Occupied'}"    class="badge occupied"   th:text="${apt.status}"></span>
+                    <span th:if="${apt.status == 'Vacant'}"      class="badge vacant"     th:text="${apt.status}"></span>
+                    <span th:if="${apt.status == 'Maintenance'}" class="badge pending"    th:text="${apt.status}"></span>
+                </div>
+
+                <p><i class="fas fa-map-marker-alt"></i> <span th:text="${apt.location}"></span></p>
+                <p><i class="fas fa-bed"></i> <span th:text="${apt.rooms}"></span> BHK &nbsp; ₹<span th:text="${apt.rent}"></span>/mo</p>
+                <p><i class="fas fa-user"></i>
+                    <span th:if="${apt.tenantName != null and !#strings.isEmpty(apt.tenantName)}" th:text="${apt.tenantName}"></span>
+                    <span th:unless="${apt.tenantName != null and !#strings.isEmpty(apt.tenantName)}">—</span>
+                </p>
+
+                <div class="actions">
+                    <button class="btn-view" onclick="viewApt(this)"><i class="fas fa-eye"></i></button>
+                    <button class="btn-edit" onclick="editApt(this)"><i class="fas fa-pen"></i></button>
+                    <a th:href="@{/apartments/delete/{id}(id=${apt.id})}"
+                       onclick="return confirm('Delete this apartment?')" style="display:inline-block;">
+                        <button class="btn-delete" type="button"><i class="fas fa-trash"></i></button>
+                    </a>
+                </div>
+            </div>
+
+            <div th:if="${apartments == null or apartments.isEmpty()}"
+                 style="grid-column:1/-1;text-align:center;padding:60px;color:#888;">
+                <i class="fas fa-building" style="font-size:48px;margin-bottom:16px;display:block;color:#cbd5e1;"></i>
+                <p>No apartments yet. Click <strong>+ Add Apartment</strong> to get started.</p>
+            </div>
+        </div>
+
+    </main>
+</div>
+
+<!-- ADD MODAL -->
+<div class="modal-overlay" id="addAptModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h2>➕ Add Apartment</h2>
+            <button class="modal-close" onclick="document.getElementById('addAptModal').classList.remove('active')">✕</button>
+        </div>
+        <form action="/apartments/add" method="post" enctype="multipart/form-data">
+            <div class="form-row">
+                <div class="form-group"><label>Apartment Number</label><input type="text" name="apartmentNumber" placeholder="e.g. A101" required></div>
+                <div class="form-group"><label>Apartment Name</label><input type="text" name="apartmentName" placeholder="e.g. Sky Heights" required></div>
+            </div>
+            <div class="form-group"><label>Location</label><input type="text" name="location" placeholder="Area, City"></div>
+            <div class="form-row">
+                <div class="form-group"><label>Rooms (BHK)</label><input type="number" name="rooms" value="1" min="1"></div>
+                <div class="form-group"><label>Monthly Rent (₹)</label><input type="number" name="rent" placeholder="25000" value="0"></div>
+            </div>
+            <div class="form-row">
+                <div class="form-group"><label>Deposit (₹)</label><input type="number" name="deposit" placeholder="50000" value="0"></div>
+                <div class="form-group"><label>Status</label>
+                    <select name="status"><option value="Vacant">Vacant</option><option value="Occupied">Occupied</option><option value="Maintenance">Maintenance</option></select>
+                </div>
+            </div>
+            <div class="form-group"><label>Tenant Name (if occupied)</label><input type="text" name="tenantName" placeholder="Leave blank if vacant"></div>
+            <div class="form-group"><label>Apartment Photo (optional)</label><input type="file" name="imageFile" accept="image/*"></div>
+            <div class="modal-footer">
+                <button type="button" class="btn-cancel" onclick="document.getElementById('addAptModal').classList.remove('active')">Cancel</button>
+                <button type="submit" class="btn-save">Save Apartment</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- EDIT MODAL -->
+<div class="modal-overlay" id="editAptModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h2>✏️ Edit Apartment</h2>
+            <button class="modal-close" onclick="document.getElementById('editAptModal').classList.remove('active')">✕</button>
+        </div>
+        <form action="/apartments/edit" method="post" enctype="multipart/form-data">
+            <input type="hidden" name="id" id="eId">
+            <div class="form-row">
+                <div class="form-group"><label>Apartment Number</label><input type="text" name="apartmentNumber" id="eNum"></div>
+                <div class="form-group"><label>Apartment Name</label><input type="text" name="apartmentName" id="eName"></div>
+            </div>
+            <div class="form-group"><label>Location</label><input type="text" name="location" id="eLoc"></div>
+            <div class="form-row">
+                <div class="form-group"><label>Rooms (BHK)</label><input type="number" name="rooms" id="eRooms"></div>
+                <div class="form-group"><label>Monthly Rent (₹)</label><input type="number" name="rent" id="eRent"></div>
+            </div>
+            <div class="form-row">
+                <div class="form-group"><label>Deposit (₹)</label><input type="number" name="deposit" id="eDeposit"></div>
+                <div class="form-group"><label>Status</label>
+                    <select name="status" id="eStatus">
+                        <option value="Vacant">Vacant</option>
+                        <option value="Occupied">Occupied</option>
+                        <option value="Maintenance">Maintenance</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group"><label>Tenant Name</label><input type="text" name="tenantName" id="eTenant"></div>
+            <div class="form-group"><label>Change Photo (optional)</label><input type="file" name="imageFile" accept="image/*"></div>
+            <div class="modal-footer">
+                <button type="button" class="btn-cancel" onclick="document.getElementById('editAptModal').classList.remove('active')">Cancel</button>
+                <button type="submit" class="btn-save">Update Apartment</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- VIEW MODAL -->
+<div class="modal-overlay" id="viewAptModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h2>🏢 Apartment Details</h2>
+            <button class="modal-close" onclick="document.getElementById('viewAptModal').classList.remove('active')">✕</button>
+        </div>
+        <div id="viewContent" style="line-height:2.4;color:#444;font-size:14px;"></div>
+        <div class="modal-footer">
+            <button class="btn-save" onclick="document.getElementById('viewAptModal').classList.remove('active')">Close</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    function getCard(btn) { return btn.closest('.apartment-card'); }
+
+    function viewApt(btn) {
+        var c = getCard(btn);
+        document.getElementById('viewContent').innerHTML =
+            '<p><strong>Number:</strong> '  + (c.dataset.num    || '') + '</p>' +
+            '<p><strong>Name:</strong> '    + (c.dataset.aptname|| '') + '</p>' +
+            '<p><strong>Location:</strong> '+ (c.dataset.loc    || '') + '</p>' +
+            '<p><strong>Rooms:</strong> '   + (c.dataset.rooms  || '') + ' BHK</p>' +
+            '<p><strong>Rent:</strong> ₹'   + (c.dataset.rent   || '') + '/mo</p>' +
+            '<p><strong>Deposit:</strong> ₹'+ (c.dataset.deposit|| '') + '</p>' +
+            '<p><strong>Tenant:</strong> '  + (c.dataset.tenant || '—') + '</p>' +
+            '<p><strong>Status:</strong> '  + (c.dataset.status || '') + '</p>';
+        document.getElementById('viewAptModal').classList.add('active');
+    }
+
+    function editApt(btn) {
+        var c = getCard(btn);
+        document.getElementById('eId').value      = c.dataset.id;
+        document.getElementById('eNum').value     = c.dataset.num;
+        document.getElementById('eName').value    = c.dataset.aptname;
+        document.getElementById('eLoc').value     = c.dataset.loc;
+        document.getElementById('eRooms').value   = c.dataset.rooms;
+        document.getElementById('eRent').value    = c.dataset.rent;
+        document.getElementById('eDeposit').value = c.dataset.deposit;
+        document.getElementById('eStatus').value  = c.dataset.status;
+        document.getElementById('eTenant').value  = c.dataset.tenant || '';
+        document.getElementById('editAptModal').classList.add('active');
+    }
+
+    function filterCards() {
+        var q = document.getElementById('searchInput').value.toLowerCase();
+        document.querySelectorAll('.apartment-card').forEach(function(c) {
+            var name = (c.dataset.name || '').toLowerCase();
+            var loc  = (c.dataset.loc  || '').toLowerCase();
+            c.style.display = (name.indexOf(q) >= 0 || loc.indexOf(q) >= 0) ? '' : 'none';
+        });
+    }
+
+    document.querySelectorAll('.modal-overlay').forEach(function(o) {
+        o.addEventListener('click', function(e) { if (e.target === o) o.classList.remove('active'); });
+    });
+</script>
+</body>
+</html>

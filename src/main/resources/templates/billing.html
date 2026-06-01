@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Billing | SAMS</title>
+    <link rel="stylesheet" th:href="@{/css/sams-global.css}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+<div class="container">
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+    <main class="main-content">
+        <div class="page-header">
+            <div><h1>💰 Billing &amp; Payments</h1><p>Manage invoices and payment records</p></div>
+            <button class="primary-btn" onclick="document.getElementById('addPaymentModal').classList.add('active')">
+                <i class="fas fa-plus"></i> New Invoice
+            </button>
+        </div>
+        <div class="cards">
+            <div class="card"><i class="fas fa-file-invoice-dollar"></i><h2 th:text="'₹' + ${collected}">₹0</h2><p>Total Collected</p></div>
+            <div class="card"><i class="fas fa-clock"></i><h2 th:text="'₹' + ${pending}">₹0</h2><p>Pending</p></div>
+            <div class="card"><i class="fas fa-exclamation-circle"></i><h2 th:text="'₹' + ${overdue}">₹0</h2><p>Overdue</p></div>
+            <div class="card"><i class="fas fa-check-circle"></i><h2 th:text="${rate} + '%'">0%</h2><p>Collection Rate</p></div>
+        </div>
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="Search by tenant, invoice or apartment..." oninput="filterRows()">
+            <button><i class="fas fa-search"></i></button>
+        </div>
+        <div class="table-card">
+            <table>
+                <thead>
+                <tr><th>Invoice ID</th><th>Tenant</th><th>Apartment</th><th>Amount</th><th>Due Date</th><th>Status</th><th>Actions</th></tr>
+                </thead>
+                <tbody>
+                <tr th:each="p : ${payments}"
+                    th:attr="data-id=${p.id},
+                                  data-inv=${p.invoiceId},
+                                  data-tenant=${p.tenantName},
+                                  data-apt=${p.apartmentNumber},
+                                  data-amount=${p.amount},
+                                  data-due=${p.dueDate},
+                                  data-status=${p.status}">
+                    <td th:text="${p.invoiceId}">INV</td>
+                    <td th:text="${p.tenantName}">Name</td>
+                    <td th:text="${p.apartmentNumber}">Apt</td>
+                    <td th:text="'₹' + ${p.amount}">₹0</td>
+                    <td th:text="${p.dueDate}">Date</td>
+                    <td>
+                        <span th:if="${p.status == 'Paid'}"    class="badge active"  th:text="${p.status}"></span>
+                        <span th:if="${p.status == 'Pending'}" class="badge pending" th:text="${p.status}"></span>
+                        <span th:if="${p.status == 'Overdue'}" class="badge overdue" th:text="${p.status}"></span>
+                    </td>
+                    <td>
+                        <button class="action-btn" onclick="editPayment(this)"><i class="fas fa-pen"></i></button>
+                        <a th:href="@{/billing/delete/{id}(id=${p.id})}" onclick="return confirm('Delete this invoice?')" style="display:inline-block;">
+                            <button class="action-btn" type="button" style="background:#fee2e2;color:#ef4444;"><i class="fas fa-trash"></i></button>
+                        </a>
+                    </td>
+                </tr>
+                <tr th:if="${payments == null or payments.isEmpty()}">
+                    <td colspan="7" style="text-align:center;padding:40px;color:#888;">No invoices yet. Click "+ New Invoice" to add one.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+</div>
+
+<!-- ADD MODAL -->
+<div class="modal-overlay" id="addPaymentModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h2>➕ New Invoice</h2>
+            <button class="modal-close" onclick="document.getElementById('addPaymentModal').classList.remove('active')">✕</button>
+        </div>
+        <form action="/billing/add" method="post">
+            <div class="form-row">
+                <div class="form-group"><label>Invoice ID</label><input type="text" name="invoiceId" placeholder="INV-001" required></div>
+                <div class="form-group"><label>Tenant Name</label><input type="text" name="tenantName" placeholder="Rahul Sharma" required></div>
+            </div>
+            <div class="form-row">
+                <div class="form-group"><label>Apartment</label><input type="text" name="apartmentNumber" placeholder="A101"></div>
+                <div class="form-group"><label>Amount (₹)</label><input type="number" name="amount" placeholder="25000" value="0" required></div>
+            </div>
+            <div class="form-row">
+                <div class="form-group"><label>Due Date</label><input type="text" name="dueDate" placeholder="01 Jun 2026"></div>
+                <div class="form-group"><label>Status</label>
+                    <select name="status">
+                        <option value="Pending">Pending</option>
+                        <option value="Paid">Paid</option>
+                        <option value="Overdue">Overdue</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-cancel" onclick="document.getElementById('addPaymentModal').classList.remove('active')">Cancel</button>
+                <button type="submit" class="btn-save">Save Invoice</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- EDIT MODAL -->
+<div class="modal-overlay" id="editPaymentModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h2>✏️ Edit Invoice</h2>
+            <button class="modal-close" onclick="document.getElementById('editPaymentModal').classList.remove('active')">✕</button>
+        </div>
+        <form action="/billing/edit" method="post">
+            <input type="hidden" name="id" id="ePId">
+            <div class="form-row">
+                <div class="form-group"><label>Invoice ID</label><input type="text" name="invoiceId" id="ePInv"></div>
+                <div class="form-group"><label>Tenant</label><input type="text" name="tenantName" id="ePTenant"></div>
+            </div>
+            <div class="form-row">
+                <div class="form-group"><label>Apartment</label><input type="text" name="apartmentNumber" id="eP_Apt"></div>
+                <div class="form-group"><label>Amount (₹)</label><input type="number" name="amount" id="ePAmount"></div>
+            </div>
+            <div class="form-row">
+                <div class="form-group"><label>Due Date</label><input type="text" name="dueDate" id="ePDue"></div>
+                <div class="form-group"><label>Status</label>
+                    <select name="status" id="ePStatus">
+                        <option value="Pending">Pending</option>
+                        <option value="Paid">Paid</option>
+                        <option value="Overdue">Overdue</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-cancel" onclick="document.getElementById('editPaymentModal').classList.remove('active')">Cancel</button>
+                <button type="submit" class="btn-save">Update Invoice</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function editPayment(btn) {
+        var r = btn.closest('tr');
+        document.getElementById('ePId').value     = r.dataset.id;
+        document.getElementById('ePInv').value    = r.dataset.inv;
+        document.getElementById('ePTenant').value = r.dataset.tenant;
+        document.getElementById('eP_Apt').value   = r.dataset.apt;
+        document.getElementById('ePAmount').value = r.dataset.amount;
+        document.getElementById('ePDue').value    = r.dataset.due;
+        document.getElementById('ePStatus').value = r.dataset.status;
+        document.getElementById('editPaymentModal').classList.add('active');
+    }
+
+    function filterRows() {
+        var q = document.getElementById('searchInput').value.toLowerCase();
+        document.querySelectorAll('tbody tr[data-id]').forEach(function(r) {
+            var text = (r.dataset.tenant + ' ' + r.dataset.inv + ' ' + r.dataset.apt).toLowerCase();
+            r.style.display = text.indexOf(q) >= 0 ? '' : 'none';
+        });
+    }
+
+    document.querySelectorAll('.modal-overlay').forEach(function(o) {
+        o.addEventListener('click', function(e) { if (e.target === o) o.classList.remove('active'); });
+    });
+</script>
+</body>
+</html>
