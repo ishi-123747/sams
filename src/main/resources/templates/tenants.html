@@ -5,200 +5,162 @@
     <title>Tenants | SAMS</title>
     <link rel="stylesheet" th:href="@{/css/sams-global.css}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .modal-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; justify-content:center; align-items:center; }
+        .modal-overlay.active { display:flex; }
+        .modal { background:#fff; border-radius:12px; padding:30px; width:450px; max-width:90%; max-height:90vh; overflow-y:auto; }
+        .modal h2 { margin-bottom:20px; }
+        .modal input, .modal select { width:100%; padding:10px; margin-bottom:12px; border:1px solid #ddd; border-radius:8px; font-size:14px; box-sizing:border-box; }
+        .modal-btns { display:flex; gap:10px; justify-content:flex-end; margin-top:10px; }
+        .btn-cancel { padding:10px 20px; border:1px solid #ddd; border-radius:8px; background:#fff; cursor:pointer; }
+        .btn-save { padding:10px 20px; border:none; border-radius:8px; background:#4f46e5; color:#fff; cursor:pointer; }
+        .empty-state { text-align:center; padding:60px 20px; color:#888; }
+        .empty-state i { font-size:48px; margin-bottom:15px; display:block; }
+    </style>
 </head>
 <body>
 <div class="container">
-    <aside class="sidebar">
-        <div class="logo">🏢 SAMS</div>
-        <ul>
-            <li><a href="/dashboard"><i class="fas fa-chart-line"></i> Dashboard</a></li>
-            <li><a href="/apartments"><i class="fas fa-building"></i> Apartments</a></li>
-            <li class="active"><a href="/tenants"><i class="fas fa-users"></i> Tenants</a></li>
-            <li><a href="/bookings"><i class="fas fa-calendar-check"></i> Bookings</a></li>
-            <li><a href="/billing"><i class="fas fa-file-invoice-dollar"></i> Billing</a></li>
-            <li><a href="/reports"><i class="fas fa-chart-pie"></i> Reports</a></li>
-            <li><a href="/settings"><i class="fas fa-cog"></i> Settings</a></li>
-            <li><a href="/logout"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
-        </ul>
-    </aside>
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
     <main class="main-content">
         <div class="topbar">
-            <div><h1>👥 Tenant Management</h1><p>Manage all residents and occupancy details</p></div>
-            <button class="add-btn" onclick="document.getElementById('addTenantModal').classList.add('active')">
-                <i class="fas fa-user-plus"></i> Add Tenant
-            </button>
+            <div>
+                <h1>👥 Tenant Management</h1>
+                <p>Manage all residents and occupancy details</p>
+            </div>
+            <button class="add-btn" onclick="openAddModal()"><i class="fas fa-user-plus"></i> Add Tenant</button>
         </div>
         <div class="stats">
-            <div class="stat-card"><i class="fas fa-users"></i><div><h2 th:text="${total}">0</h2><p>Total Tenants</p></div></div>
-            <div class="stat-card"><i class="fas fa-check-circle"></i><div><h2 th:text="${active}">0</h2><p>Active</p></div></div>
-            <div class="stat-card"><i class="fas fa-clock"></i><div><h2 th:text="${pending}">0</h2><p>Pending Rent</p></div></div>
-            <div class="stat-card"><i class="fas fa-exclamation-triangle"></i><div><h2 th:text="${overdue}">0</h2><p>Overdue</p></div></div>
+            <div class="stat-card"><i class="fas fa-users"></i><div><h2 id="totalCount">0</h2><p>Total Tenants</p></div></div>
+            <div class="stat-card"><i class="fas fa-check-circle"></i><div><h2 id="paidCount">0</h2><p>Paid</p></div></div>
+            <div class="stat-card"><i class="fas fa-clock"></i><div><h2 id="pendingCount">0</h2><p>Pending</p></div></div>
+            <div class="stat-card"><i class="fas fa-exclamation-triangle"></i><div><h2 id="overdueCount">0</h2><p>Overdue</p></div></div>
         </div>
         <div class="search-section">
-            <input type="text" id="searchInput" placeholder="Search tenant name, apartment or phone..." oninput="filterCards()">
+            <input type="text" id="searchInput" placeholder="Search tenant name, apartment or phone..." oninput="filterTenants()">
             <button><i class="fas fa-search"></i></button>
         </div>
-        <div class="tenant-grid">
-            <div th:each="t : ${tenants}" class="tenant-card"
-                 th:attr="data-id=${t.id},
-                           data-name=${t.name},
-                           data-phone=${t.phone},
-                           data-email=${t.email},
-                           data-apt=${t.apartmentNumber},
-                           data-join=${t.joinDate},
-                           data-aadhar=${t.aadhar},
-                           data-status=${t.status}">
-
-                <img th:src="|https://ui-avatars.com/api/?name=${t.name}&background=006d77&color=fff&size=80|"
-                     alt="avatar" style="width:76px;height:76px;border-radius:50%;object-fit:cover;margin-bottom:10px;border:3px solid #006d77;">
-
-                <div class="tenant-info">
-                    <h3 th:text="${t.name}">Name</h3>
-                    <span th:if="${t.status == 'Active'}"   class="badge active"   th:text="${t.status}"></span>
-                    <span th:if="${t.status == 'Overdue'}"  class="badge overdue"  th:text="${t.status}"></span>
-                    <span th:if="${t.status == 'Pending'}"  class="badge pending"  th:text="${t.status}"></span>
-                    <p><i class="fas fa-building"></i> <span th:text="${t.apartmentNumber}"></span></p>
-                    <p><i class="fas fa-phone"></i> <span th:text="${t.phone}"></span></p>
-                    <p><i class="fas fa-envelope"></i> <span th:text="${t.email}"></span></p>
-                    <p><i class="fas fa-calendar"></i> Joined: <span th:text="${t.joinDate}"></span></p>
-                    <p><i class="fas fa-id-card"></i> <span th:text="${t.aadhar}"></span></p>
-                </div>
-                <div class="actions">
-                    <button class="btn-view"   onclick="viewTenant(this)"><i class="fas fa-eye"></i></button>
-                    <button class="btn-edit"   onclick="editTenant(this)"><i class="fas fa-pen"></i></button>
-                    <a th:href="@{/tenants/delete/{id}(id=${t.id})}" onclick="return confirm('Delete this tenant?')" style="display:inline-block;">
-                        <button class="btn-delete" type="button"><i class="fas fa-trash"></i></button>
-                    </a>
-                </div>
-            </div>
-
-            <div th:if="${tenants == null or tenants.isEmpty()}"
-                 style="grid-column:1/-1;text-align:center;padding:60px;color:#888;">
-                <i class="fas fa-users" style="font-size:48px;margin-bottom:16px;display:block;color:#cbd5e1;"></i>
-                <p>No tenants yet. Click <strong>+ Add Tenant</strong> to get started.</p>
-            </div>
+        <div class="tenant-grid" id="tenantGrid">
+            <div class="empty-state"><i class="fas fa-users"></i><p>No tenants added yet. Click <strong>Add Tenant</strong> to get started.</p></div>
         </div>
     </main>
 </div>
 
-<!-- ADD MODAL -->
-<div class="modal-overlay" id="addTenantModal">
+<div class="modal-overlay" id="tenantModal">
     <div class="modal">
-        <div class="modal-header">
-            <h2>➕ Add New Tenant</h2>
-            <button class="modal-close" onclick="document.getElementById('addTenantModal').classList.remove('active')">✕</button>
-        </div>
-        <form action="/tenants/add" method="post">
-            <div class="form-row">
-                <div class="form-group"><label>Full Name</label><input type="text" name="name" placeholder="Rahul Sharma" required></div>
-                <div class="form-group"><label>Phone</label><input type="text" name="phone" placeholder="+91 9876543210"></div>
-            </div>
-            <div class="form-group"><label>Email</label><input type="email" name="email" placeholder="email@gmail.com"></div>
-            <div class="form-row">
-                <div class="form-group"><label>Apartment Number</label><input type="text" name="apartmentNumber" placeholder="A101"></div>
-                <div class="form-group"><label>Join Date</label><input type="text" name="joinDate" placeholder="01-Jan-2026"></div>
-            </div>
-            <div class="form-row">
-                <div class="form-group"><label>Aadhar Number</label><input type="text" name="aadhar" placeholder="XXXX XXXX XXXX"></div>
-                <div class="form-group"><label>Status</label>
-                    <select name="status"><option>Active</option><option>Pending</option><option>Overdue</option></select>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn-cancel" onclick="document.getElementById('addTenantModal').classList.remove('active')">Cancel</button>
-                <button type="submit" class="btn-save">Save Tenant</button>
-            </div>
-        </form>
-    </div>
-</div>
-
-<!-- EDIT MODAL -->
-<div class="modal-overlay" id="editTenantModal">
-    <div class="modal">
-        <div class="modal-header">
-            <h2>✏️ Edit Tenant</h2>
-            <button class="modal-close" onclick="document.getElementById('editTenantModal').classList.remove('active')">✕</button>
-        </div>
-        <form action="/tenants/edit" method="post">
-            <input type="hidden" name="id" id="eTId">
-            <div class="form-row">
-                <div class="form-group"><label>Full Name</label><input type="text" name="name" id="eTName"></div>
-                <div class="form-group"><label>Phone</label><input type="text" name="phone" id="eTPhone"></div>
-            </div>
-            <div class="form-group"><label>Email</label><input type="email" name="email" id="eTEmail"></div>
-            <div class="form-row">
-                <div class="form-group"><label>Apartment Number</label><input type="text" name="apartmentNumber" id="eTApt"></div>
-                <div class="form-group"><label>Join Date</label><input type="text" name="joinDate" id="eTJoin"></div>
-            </div>
-            <div class="form-row">
-                <div class="form-group"><label>Aadhar</label><input type="text" name="aadhar" id="eTAadhar"></div>
-                <div class="form-group"><label>Status</label>
-                    <select name="status" id="eTStatus"><option>Active</option><option>Pending</option><option>Overdue</option></select>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn-cancel" onclick="document.getElementById('editTenantModal').classList.remove('active')">Cancel</button>
-                <button type="submit" class="btn-save">Update Tenant</button>
-            </div>
-        </form>
-    </div>
-</div>
-
-<!-- VIEW MODAL -->
-<div class="modal-overlay" id="viewTenantModal">
-    <div class="modal">
-        <div class="modal-header">
-            <h2>👤 Tenant Details</h2>
-            <button class="modal-close" onclick="document.getElementById('viewTenantModal').classList.remove('active')">✕</button>
-        </div>
-        <div id="viewTenantContent" style="line-height:2.4;color:#444;font-size:14px;"></div>
-        <div class="modal-footer">
-            <button class="btn-save" onclick="document.getElementById('viewTenantModal').classList.remove('active')">Close</button>
+        <h2 id="modalTitle">👤 Add Tenant</h2>
+        <input type="text" id="tName" placeholder="Full Name">
+        <input type="text" id="tApartment" placeholder="Apartment Number (e.g. A101)">
+        <input type="tel" id="tPhone" placeholder="Phone Number">
+        <input type="email" id="tEmail" placeholder="Email Address">
+        <input type="text" id="tAadhar" placeholder="Aadhar Number">
+        <input type="date" id="tJoinDate">
+        <select id="tStatus">
+            <option value="">-- Payment Status --</option>
+            <option value="active">Paid</option>
+            <option value="pending">Pending</option>
+            <option value="overdue">Overdue</option>
+        </select>
+        <div class="modal-btns">
+            <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+            <button class="btn-save" onclick="saveTenant()">Save</button>
         </div>
     </div>
 </div>
 
 <script>
-    function getCard(btn) { return btn.closest('.tenant-card'); }
+    let tenants = JSON.parse(localStorage.getItem('sams_tenants') || '[]');
+    let editIndex = -1;
 
-    function viewTenant(btn) {
-        var c = getCard(btn);
-        document.getElementById('viewTenantContent').innerHTML =
-            '<p><strong>Name:</strong> '      + (c.dataset.name   || '') + '</p>' +
-            '<p><strong>Apartment:</strong> ' + (c.dataset.apt    || '') + '</p>' +
-            '<p><strong>Phone:</strong> '     + (c.dataset.phone  || '') + '</p>' +
-            '<p><strong>Email:</strong> '     + (c.dataset.email  || '') + '</p>' +
-            '<p><strong>Joined:</strong> '    + (c.dataset.join   || '') + '</p>' +
-            '<p><strong>Aadhar:</strong> '    + (c.dataset.aadhar || '') + '</p>' +
-            '<p><strong>Status:</strong> '    + (c.dataset.status || '') + '</p>';
-        document.getElementById('viewTenantModal').classList.add('active');
+    function persist() { localStorage.setItem('sams_tenants', JSON.stringify(tenants)); }
+
+    function openAddModal() {
+        editIndex = -1;
+        document.getElementById('modalTitle').textContent = '👤 Add Tenant';
+        clearForm();
+        document.getElementById('tenantModal').classList.add('active');
     }
 
-    function editTenant(btn) {
-        var c = getCard(btn);
-        document.getElementById('eTId').value     = c.dataset.id;
-        document.getElementById('eTName').value   = c.dataset.name;
-        document.getElementById('eTPhone').value  = c.dataset.phone;
-        document.getElementById('eTEmail').value  = c.dataset.email;
-        document.getElementById('eTApt').value    = c.dataset.apt;
-        document.getElementById('eTJoin').value   = c.dataset.join;
-        document.getElementById('eTAadhar').value = c.dataset.aadhar;
-        document.getElementById('eTStatus').value = c.dataset.status;
-        document.getElementById('editTenantModal').classList.add('active');
+    function openEditModal(i) {
+        editIndex = i;
+        const t = tenants[i];
+        document.getElementById('modalTitle').textContent = '✏️ Edit Tenant';
+        document.getElementById('tName').value = t.name;
+        document.getElementById('tApartment').value = t.apartment;
+        document.getElementById('tPhone').value = t.phone;
+        document.getElementById('tEmail').value = t.email;
+        document.getElementById('tAadhar').value = t.aadhar;
+        document.getElementById('tJoinDate').value = t.joinDate;
+        document.getElementById('tStatus').value = t.status;
+        document.getElementById('tenantModal').classList.add('active');
     }
 
-    function filterCards() {
-        var q = document.getElementById('searchInput').value.toLowerCase();
-        document.querySelectorAll('.tenant-card').forEach(function(c) {
-            var name = (c.dataset.name || '').toLowerCase();
-            var apt  = (c.dataset.apt  || '').toLowerCase();
-            c.style.display = (name.indexOf(q) >= 0 || apt.indexOf(q) >= 0) ? '' : 'none';
-        });
+    function closeModal() { document.getElementById('tenantModal').classList.remove('active'); clearForm(); }
+
+    function saveTenant() {
+        const name = document.getElementById('tName').value.trim();
+        const apartment = document.getElementById('tApartment').value.trim();
+        const phone = document.getElementById('tPhone').value.trim();
+        const email = document.getElementById('tEmail').value.trim();
+        const aadhar = document.getElementById('tAadhar').value.trim();
+        const joinDate = document.getElementById('tJoinDate').value;
+        const status = document.getElementById('tStatus').value;
+
+        if (!name || !apartment || !phone || !status) { alert('Please fill in Name, Apartment, Phone and Status.'); return; }
+
+        if (editIndex === -1) {
+            tenants.push({ name, apartment, phone, email, aadhar, joinDate, status });
+        } else {
+            tenants[editIndex] = { name, apartment, phone, email, aadhar, joinDate, status };
+        }
+        persist(); renderTenants(); updateStats(); clearForm(); closeModal();
     }
 
-    document.querySelectorAll('.modal-overlay').forEach(function(o) {
-        o.addEventListener('click', function(e) { if (e.target === o) o.classList.remove('active'); });
-    });
+    function renderTenants(filter = '') {
+        const grid = document.getElementById('tenantGrid');
+        const filtered = tenants.map((t, i) => ({ ...t, i })).filter(t =>
+            t.name.toLowerCase().includes(filter) ||
+            t.apartment.toLowerCase().includes(filter) ||
+            t.phone.includes(filter)
+        );
+        if (filtered.length === 0) { grid.innerHTML = `<div class="empty-state"><i class="fas fa-users"></i><p>No tenants found.</p></div>`; return; }
+        const statusLabel = { active: 'Paid', pending: 'Pending', overdue: 'Overdue' };
+        grid.innerHTML = filtered.map(t => `
+            <div class="tenant-card">
+                <div class="tenant-info">
+                    <h3>${t.name}</h3>
+                    <span class="badge ${t.status}">${statusLabel[t.status]}</span>
+                    <p><i class="fas fa-building"></i> Apartment ${t.apartment}</p>
+                    <p><i class="fas fa-phone"></i> ${t.phone}</p>
+                    <p><i class="fas fa-envelope"></i> ${t.email || '—'}</p>
+                    <p><i class="fas fa-calendar"></i> Joined: ${t.joinDate || '—'}</p>
+                    <p><i class="fas fa-id-card"></i> Aadhar: ${t.aadhar || '—'}</p>
+                </div>
+                <div class="actions">
+                    <button class="btn-edit" onclick="openEditModal(${t.i})"><i class="fas fa-pen"></i></button>
+                    <button class="btn-delete" onclick="deleteTenant(${t.i})"><i class="fas fa-trash"></i></button>
+                </div>
+            </div>`).join('');
+    }
+
+    function deleteTenant(index) {
+        if (confirm('Delete this tenant?')) { tenants.splice(index, 1); persist(); renderTenants(); updateStats(); }
+    }
+
+    function updateStats() {
+        document.getElementById('totalCount').textContent = tenants.length;
+        document.getElementById('paidCount').textContent = tenants.filter(t => t.status === 'active').length;
+        document.getElementById('pendingCount').textContent = tenants.filter(t => t.status === 'pending').length;
+        document.getElementById('overdueCount').textContent = tenants.filter(t => t.status === 'overdue').length;
+    }
+
+    function filterTenants() { renderTenants(document.getElementById('searchInput').value.toLowerCase()); }
+
+    function clearForm() {
+        ['tName','tApartment','tPhone','tEmail','tAadhar','tJoinDate'].forEach(id => document.getElementById(id).value = '');
+        document.getElementById('tStatus').value = '';
+    }
+
+    renderTenants(); updateStats();
 </script>
 </body>
 </html>
