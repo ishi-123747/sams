@@ -12,6 +12,7 @@
         .modal{background:var(--surface-bg);color:var(--text-body);border-radius:12px;padding:30px;width:450px;max-width:90%;max-height:90vh;overflow-y:auto;}
         .modal h2{margin-bottom:20px;color:var(--text-heading);}
         .modal input,.modal select{width:100%;padding:10px;margin-bottom:12px;border:1px solid var(--input-border);border-radius:8px;font-size:14px;box-sizing:border-box;background:var(--surface-bg);color:var(--text-body);}
+        .modal label{font-size:13px;color:var(--text-muted);margin-bottom:4px;display:block;}
         .modal-btns{display:flex;gap:10px;justify-content:flex-end;margin-top:10px;}
         .btn-cancel{padding:10px 20px;border:1px solid var(--input-border);border-radius:8px;background:var(--surface-bg);color:var(--text-body);cursor:pointer;}
         .btn-save{padding:10px 20px;border:none;border-radius:8px;background:#4f46e5;color:#fff;cursor:pointer;}
@@ -58,6 +59,7 @@
                     <p><i class="fas fa-phone"></i> <span th:text="${t.phone}">—</span></p>
                     <p><i class="fas fa-envelope"></i> <span th:text="${t.email != null ? t.email : '—'}">—</span></p>
                     <p><i class="fas fa-calendar"></i> Joined: <span th:text="${t.joinDate != null ? t.joinDate : '—'}">—</span></p>
+                    <p><i class="fas fa-birthday-cake"></i> DOB: <span th:text="${t.dateOfBirth != null ? t.dateOfBirth : '—'}">—</span></p>
                     <p><i class="fas fa-id-card"></i> Aadhar: <span th:text="${t.aadhar != null ? t.aadhar : '—'}">—</span></p>
                 </div>
                 <div class="actions">
@@ -81,7 +83,10 @@
             <input type="tel" name="phone" placeholder="Phone Number" required>
             <input type="email" name="email" placeholder="Email Address">
             <input type="text" name="aadhar" placeholder="Aadhar Number">
+            <label>Date of Joining</label>
             <input type="date" name="joinDate">
+            <label>Date of Birth 🎂</label>
+            <input type="date" name="dateOfBirth">
             <select name="status" required>
                 <option value="">-- Status --</option>
                 <option value="Active">Active</option>
@@ -106,7 +111,10 @@
             <input type="tel" id="editPhone" name="phone" placeholder="Phone Number" required>
             <input type="email" id="editEmail" name="email" placeholder="Email Address">
             <input type="text" id="editAadhar" name="aadhar" placeholder="Aadhar Number">
+            <label>Date of Joining</label>
             <input type="date" id="editJoinDate" name="joinDate">
+            <label>Date of Birth 🎂</label>
+            <input type="date" id="editDob" name="dateOfBirth">
             <select id="editStatus" name="status" required>
                 <option value="">-- Status --</option>
                 <option value="Active">Active</option>
@@ -133,6 +141,7 @@
         document.getElementById('editEmail').value=t.email||'';
         document.getElementById('editAadhar').value=t.aadhar||'';
         document.getElementById('editJoinDate').value=t.joinDate||'';
+        document.getElementById('editDob').value=t.dateOfBirth||'';
         document.getElementById('editStatus').value=t.status||'';
         document.getElementById('editModal').classList.add('active');
     }

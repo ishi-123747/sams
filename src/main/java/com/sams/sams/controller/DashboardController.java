@@ -1,5 +1,6 @@
 package com.sams.sams.controller;
 
+import com.sams.sams.model.Tenant;
 import com.sams.sams.repository.*;
 import com.sams.sams.model.Payment;
 import jakarta.servlet.http.HttpSession;
@@ -42,33 +43,57 @@ public class DashboardController {
                 .filter(p -> "paid".equalsIgnoreCase(p.getStatus()))
                 .mapToDouble(Payment::getAmount)
                 .sum();
-
         model.addAttribute("monthlyRevenue", String.format("%.0f", totalPaid));
 
-        // Recent payments (last 5)
         int size = allPayments.size();
-        model.addAttribute("recentPayments",
-                allPayments.subList(Math.max(0, size - 5), size));
+        model.addAttribute("recentPayments", allPayments.subList(Math.max(0, size - 5), size));
 
-        // Revenue chart - last 6 months
         List<String> labels = new ArrayList<>();
         List<Double> data = new ArrayList<>();
         SimpleDateFormat monthFmt = new SimpleDateFormat("MMM");
-
         Random random = new Random(42);
         for (int i = 5; i >= 0; i--) {
             Calendar cal = Calendar.getInstance();
             cal.add(Calendar.MONTH, -i);
             labels.add(monthFmt.format(cal.getTime()));
-            if (i == 0) {
-                data.add(totalPaid);
-            } else {
-                data.add(totalPaid * (0.4 + (random.nextDouble() * 0.6)));
-            }
+            data.add(i == 0 ? totalPaid : totalPaid * (0.4 + (random.nextDouble() * 0.6)));
         }
-
         model.addAttribute("revenueLabels", labels);
         model.addAttribute("revenueData", data);
+
+        // Birthday tracker — find tenants with birthdays in next 30 days
+        List<Tenant> allTenants = tenantRepository.findAll();
+        List<Map<String, String>> upcomingBirthdays = new ArrayList<>();
+        Calendar today = Calendar.getInstance();
+        int todayMonth = today.get(Calendar.MONTH) + 1;
+        int todayDay = today.get(Calendar.DAY_OF_MONTH);
+
+        for (Tenant t : allTenants) {
+            if (t.getDateOfBirth() != null && !t.getDateOfBirth().isEmpty()) {
+                try {
+                    String[] parts = t.getDateOfBirth().split("-");
+                    if (parts.length >= 3) {
+                        int birthMonth = Integer.parseInt(parts[1]);
+                        int birthDay = Integer.parseInt(parts[2]);
+
+                        int daysUntil = ((birthMonth - todayMonth) * 30 + (birthDay - todayDay));
+                        if (daysUntil < 0) daysUntil += 365;
+                        if (daysUntil <= 30) {
+                            Map<String, String> bday = new HashMap<>();
+                            bday.put("name", t.getName());
+                            bday.put("apartment", t.getApartmentNumber());
+                            bday.put("dob", t.getDateOfBirth());
+                            bday.put("daysUntil", String.valueOf(daysUntil));
+                            bday.put("isToday", daysUntil == 0 ? "true" : "false");
+                            upcomingBirthdays.add(bday);
+                        }
+                    }
+                } catch (Exception ignored) {}
+            }
+        }
+        upcomingBirthdays.sort(Comparator.comparingInt(m -> Integer.parseInt(m.get("daysUntil"))));
+        model.addAttribute("upcomingBirthdays", upcomingBirthdays);
+
         model.addAttribute("activePage", "dashboard");
         return "dashboard";
     }

@@ -13,6 +13,7 @@ public class Tenant {
     private String apartmentNumber;
     private String joinDate;
     private String status;
+    private String dateOfBirth;
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -30,4 +31,6 @@ public class Tenant {
     public void setJoinDate(String joinDate) { this.joinDate = joinDate; }
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+    public String getDateOfBirth() { return dateOfBirth; }
+    public void setDateOfBirth(String dateOfBirth) { this.dateOfBirth = dateOfBirth; }
 }
