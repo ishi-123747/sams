@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <script th:src="@{/js/theme.js}"></script>
+    <meta charset="UTF-8">
+    <title>My Complaints | SAMS</title>
+    <link rel="stylesheet" th:href="@{/css/sams-global.css}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .page-box{background:var(--surface-bg);border-radius:14px;padding:28px;box-shadow:0 2px 8px rgba(0,0,0,0.08);margin-bottom:24px;}
+        .page-box h3{margin:0 0 18px;color:var(--text-heading);font-size:16px;}
+        .badge{padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600;display:inline-block;}
+        .open{background:#fee2e2;color:#dc2626;}
+        .resolved{background:#dcfce7;color:#16a34a;}
+        .in-progress{background:#fef9c3;color:#ca8a04;}
+        table{width:100%;border-collapse:collapse;}
+        th,td{padding:12px;text-align:left;border-bottom:1px solid var(--input-border);font-size:14px;}
+        th{color:var(--text-muted);font-weight:600;}
+        .empty{text-align:center;padding:30px;color:var(--text-muted);}
+        .complaint-form input,.complaint-form textarea{width:100%;padding:10px;border:1px solid var(--input-border);border-radius:8px;font-size:14px;background:var(--surface-bg);color:var(--text-body);box-sizing:border-box;margin-bottom:12px;}
+        .complaint-form textarea{height:100px;resize:vertical;}
+        .submit-btn{padding:10px 24px;background:#4f46e5;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600;}
+    </style>
+</head>
+<body>
+<div class="container">
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+    <main class="main-content">
+
+        <div class="topbar">
+            <div>
+                <h1>🔧 My Complaints</h1>
+                <p>View and raise maintenance complaints</p>
+            </div>
+        </div>
+
+        <div class="page-box">
+            <h3><i class="fas fa-plus-circle" style="color:#4f46e5;margin-right:8px;"></i>Raise a New Complaint</h3>
+            <form th:action="@{/my-portal/complaint}" method="post" class="complaint-form">
+                <input type="text" name="subject" placeholder="Subject (e.g. Water leakage in bathroom)" required>
+                <textarea name="description" placeholder="Describe the issue in detail..."></textarea>
+                <button type="submit" class="submit-btn">
+                    <i class="fas fa-paper-plane"></i> Submit Complaint
+                </button>
+            </form>
+        </div>
+
+        <div class="page-box">
+            <h3><i class="fas fa-list" style="color:#4f46e5;margin-right:8px;"></i>My Complaint History</h3>
+            <table>
+                <thead>
+                <tr>
+                    <th>Subject</th>
+                    <th>Description</th>
+                    <th>Date Raised</th>
+                    <th>Status</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:if="${#lists.isEmpty(myComplaints)}">
+                    <td colspan="4" class="empty">No complaints raised yet.</td>
+                </tr>
+                <tr th:each="c : ${myComplaints}">
+                    <td th:text="${c.subject != null ? c.subject : '-'}">-</td>
+                    <td th:text="${c.description != null ? c.description : '-'}">-</td>
+                    <td th:text="${c.createdDate != null ? c.createdDate : '-'}">-</td>
+                    <td>
+                        <span class="badge open"
+                              th:classappend="${c.status != null ? #strings.toLowerCase(c.status) : 'open'}"
+                              th:text="${c.status != null ? c.status : 'Open'}">Open</span>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+    </main>
+</div>
+</body>
+</html>

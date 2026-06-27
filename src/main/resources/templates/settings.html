@@ -1,115 +1,332 @@
 <!DOCTYPE html>
+
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
+    <script th:src="@{/js/theme.js}"></script>
     <meta charset="UTF-8">
     <title>Settings | SAMS</title>
+
+    ```
     <link rel="stylesheet" th:href="@{/css/sams-global.css}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
     <style>
-        .notif-item { display:flex; align-items:center; gap:12px; padding:12px 0; border-bottom:1px solid #f1f5f9; }
-        .notif-item:last-child { border-bottom:none; }
-        .notif-item input[type=checkbox] { width:18px; height:18px; accent-color:#006d77; cursor:pointer; flex-shrink:0; }
-        .notif-item span { font-size:14px; color:#444; }
-        .toggle-switch { position:relative; width:44px; height:24px; flex-shrink:0; }
-        .toggle-switch input { opacity:0; width:0; height:0; }
-        .slider { position:absolute; cursor:pointer; inset:0; background:#cbd5e1; border-radius:24px; transition:.3s; }
-        .slider:before { content:''; position:absolute; width:18px; height:18px; left:3px; bottom:3px; background:white; border-radius:50%; transition:.3s; }
-        .toggle-switch input:checked + .slider { background:#006d77; }
-        .toggle-switch input:checked + .slider:before { transform:translateX(20px); }
+        .settings-grid{
+            display:grid;
+            grid-template-columns:1fr 1fr;
+            gap:20px;
+        }
+
+        .settings-box{
+            background:var(--surface-bg);
+            border-radius:14px;
+            padding:28px;
+            box-shadow:0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .settings-box h3{
+            margin:0 0 20px;
+            color:var(--text-heading);
+        }
+
+        .form-group{
+            margin-bottom:16px;
+        }
+
+        .form-group label{
+            display:block;
+            font-size:13px;
+            color:var(--text-muted);
+            margin-bottom:6px;
+        }
+
+        .form-group input{
+            width:100%;
+            padding:10px 14px;
+            border:1px solid var(--input-border);
+            border-radius:8px;
+            font-size:14px;
+            background:var(--surface-bg);
+            color:var(--text-body);
+            box-sizing:border-box;
+        }
+
+        .save-btn{
+            padding:10px 24px;
+            background:#4f46e5;
+            color:#fff;
+            border:none;
+            border-radius:8px;
+            cursor:pointer;
+            font-size:14px;
+            font-weight:600;
+        }
+
+        .success-msg{
+            background:#dcfce7;
+            color:#16a34a;
+            padding:12px 16px;
+            border-radius:8px;
+            margin-bottom:16px;
+            font-size:14px;
+        }
+
+        .error-msg{
+            background:#fee2e2;
+            color:#dc2626;
+            padding:12px 16px;
+            border-radius:8px;
+            margin-bottom:16px;
+            font-size:14px;
+        }
+
+        @media(max-width:768px){
+            .settings-grid{
+                grid-template-columns:1fr;
+            }
+        }
     </style>
+    ```
+
 </head>
+
 <body>
+
 <div class="container">
+
+    ```
     <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+
     <main class="main-content">
-        <div class="page-header">
-            <div><h1>⚙️ Settings</h1><p>Manage your SAMS preferences and account</p></div>
-            <button class="save-btn" onclick="saveSettings()"><i class="fas fa-save"></i> Save Changes</button>
+
+        <div class="topbar">
+            <div>
+                <h1>⚙️ Settings</h1>
+                <p>Manage your account and preferences</p>
+            </div>
         </div>
+
+        <div th:if="${success}" class="success-msg" th:text="${success}"></div>
+        <div th:if="${error}" class="error-msg" th:text="${error}"></div>
+
+        <!-- Settings Grid -->
         <div class="settings-grid">
 
-            <div class="settings-card">
-                <h3><i class="fas fa-user-circle"></i> Profile Settings</h3>
-                <div class="form-group" style="margin-bottom:12px;">
-                    <label style="font-size:12px;color:#888;font-weight:600;">Full Name</label>
-                    <input type="text" value="Admin User">
-                </div>
-                <div class="form-group" style="margin-bottom:12px;">
-                    <label style="font-size:12px;color:#888;font-weight:600;">Email</label>
-                    <input type="email" value="admin@sams.com">
-                </div>
-                <div class="form-group" style="margin-bottom:16px;">
-                    <label style="font-size:12px;color:#888;font-weight:600;">Phone</label>
-                    <input type="text" placeholder="Phone Number">
-                </div>
-                <button class="card-btn" onclick="showToast('Profile updated!','success')">Update Profile</button>
+            <!-- Change Password -->
+            <div class="settings-box">
+                <h3>🔒 Change Password</h3>
+
+                <form th:action="@{/settings/change-password}" method="post">
+
+                    <div class="form-group">
+                        <label>Current Password</label>
+                        <input type="password" name="currentPassword" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>New Password</label>
+                        <input type="password" name="newPassword" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Confirm New Password</label>
+                        <input type="password" name="confirmPassword" required>
+                    </div>
+
+                    <button type="submit" class="save-btn">
+                        Update Password
+                    </button>
+
+                </form>
             </div>
 
-            <div class="settings-card">
-                <h3><i class="fas fa-lock"></i> Security</h3>
-                <div class="form-group" style="margin-bottom:12px;">
-                    <label style="font-size:12px;color:#888;font-weight:600;">Current Password</label>
-                    <input type="password" placeholder="Current Password">
-                </div>
-                <div class="form-group" style="margin-bottom:12px;">
-                    <label style="font-size:12px;color:#888;font-weight:600;">New Password</label>
-                    <input type="password" placeholder="New Password">
-                </div>
-                <div class="form-group" style="margin-bottom:16px;">
-                    <label style="font-size:12px;color:#888;font-weight:600;">Confirm Password</label>
-                    <input type="password" placeholder="Confirm Password">
-                </div>
-                <button class="card-btn" onclick="showToast('Password changed!','success')">Change Password</button>
-            </div>
+            <!-- Account Info -->
+            <div class="settings-box">
 
-            <div class="settings-card">
-                <h3><i class="fas fa-bell"></i> Notifications</h3>
-                <div class="notif-item">
-                    <label class="toggle-switch"><input type="checkbox" checked><span class="slider"></span></label>
-                    <span>Email Notifications</span>
-                </div>
-                <div class="notif-item">
-                    <label class="toggle-switch"><input type="checkbox" checked><span class="slider"></span></label>
-                    <span>Booking Alerts</span>
-                </div>
-                <div class="notif-item">
-                    <label class="toggle-switch"><input type="checkbox"><span class="slider"></span></label>
-                    <span>Maintenance Alerts</span>
-                </div>
-                <div class="notif-item">
-                    <label class="toggle-switch"><input type="checkbox" checked><span class="slider"></span></label>
-                    <span>Payment Reminders</span>
-                </div>
-                <div class="notif-item">
-                    <label class="toggle-switch"><input type="checkbox"><span class="slider"></span></label>
-                    <span>Overdue Alerts</span>
-                </div>
-            </div>
+                <h3>👤 Account Info</h3>
 
-            <div class="settings-card">
-                <h3><i class="fas fa-server"></i> System Settings</h3>
-                <div class="form-group" style="margin-bottom:12px;">
-                    <label style="font-size:12px;color:#888;font-weight:600;">Language</label>
-                    <select><option>English</option><option>Hindi</option><option>Telugu</option></select>
+                <div class="form-group">
+                    <label>Username</label>
+                    <input type="text"
+                           th:value="${session.username}"
+                           readonly
+                           style="opacity:0.6;">
                 </div>
-                <div class="form-group" style="margin-bottom:12px;">
-                    <label style="font-size:12px;color:#888;font-weight:600;">Currency</label>
-                    <select><option>Indian Rupee (₹)</option><option>USD ($)</option></select>
+
+                <div class="form-group">
+                    <label>Role</label>
+                    <input type="text"
+                           th:value="${session.role}"
+                           readonly
+                           style="opacity:0.6;">
                 </div>
-                <div class="form-group" style="margin-bottom:16px;">
-                    <label style="font-size:12px;color:#888;font-weight:600;">Theme</label>
-                    <select><option>Light Theme</option><option>Dark Theme</option></select>
+
+                <div class="form-group">
+                    <label>System Version</label>
+                    <input type="text"
+                           value="SAMS v1.0"
+                           readonly
+                           style="opacity:0.6;">
                 </div>
-                <button class="card-btn" onclick="showToast('Settings saved!','success')">Apply Settings</button>
+
             </div>
 
         </div>
+
+        <!-- User Management -->
+        <div class="settings-box" style="margin-top:24px;">
+
+            <h3>👥 Manage Logins</h3>
+
+            <form th:action="@{/settings/add-user}"
+                  method="post"
+                  style="display:grid;
+                     grid-template-columns:1fr 1fr 1fr auto;
+                     gap:10px;
+                     align-items:end;
+                     margin-bottom:20px;">
+
+                <div>
+                    <label style="font-size:13px;color:var(--text-muted);display:block;margin-bottom:4px;">
+                        Username
+                    </label>
+
+                    <input type="text"
+                           name="username"
+                           placeholder="e.g. john_tenant"
+                           required
+                           style="width:100%;
+                              padding:10px;
+                              border:1px solid var(--input-border);
+                              border-radius:8px;
+                              font-size:14px;
+                              background:var(--surface-bg);
+                              color:var(--text-body);
+                              box-sizing:border-box;">
+                </div>
+
+                <div>
+                    <label style="font-size:13px;color:var(--text-muted);display:block;margin-bottom:4px;">
+                        Password
+                    </label>
+
+                    <input type="password"
+                           name="password"
+                           placeholder="Password"
+                           required
+                           style="width:100%;
+                              padding:10px;
+                              border:1px solid var(--input-border);
+                              border-radius:8px;
+                              font-size:14px;
+                              background:var(--surface-bg);
+                              color:var(--text-body);
+                              box-sizing:border-box;">
+                </div>
+
+                <div>
+                    <label style="font-size:13px;color:var(--text-muted);display:block;margin-bottom:4px;">
+                        Role
+                    </label>
+
+                    <select name="role"
+                            required
+                            style="width:100%;
+                               padding:10px;
+                               border:1px solid var(--input-border);
+                               border-radius:8px;
+                               font-size:14px;
+                               background:var(--surface-bg);
+                               color:var(--text-body);
+                               box-sizing:border-box;">
+
+                        <option value="TENANT">Tenant</option>
+                        <option value="ADMIN">Admin</option>
+
+                    </select>
+                </div>
+
+                <button type="submit"
+                        class="save-btn"
+                        style="height:40px;">
+                    Add User
+                </button>
+
+            </form>
+
+            <table style="width:100%;border-collapse:collapse;">
+
+                <thead>
+                <tr>
+                    <th style="padding:10px;text-align:left;border-bottom:1px solid var(--input-border);">
+                        Username
+                    </th>
+
+                    <th style="padding:10px;text-align:left;border-bottom:1px solid var(--input-border);">
+                        Role
+                    </th>
+
+                    <th style="padding:10px;text-align:left;border-bottom:1px solid var(--input-border);">
+                        Action
+                    </th>
+                </tr>
+                </thead>
+
+                <tbody>
+
+                <tr th:if="${users == null or #lists.isEmpty(users)}">
+                    <td colspan="3"
+                        style="padding:20px;text-align:center;color:#888;">
+                        No users found.
+                    </td>
+                </tr>
+
+                <tr th:each="u : ${users}">
+
+                    <td style="padding:10px;border-bottom:1px solid var(--input-border);">
+                        <strong th:text="${u.username}">Username</strong>
+                    </td>
+
+                    <td style="padding:10px;border-bottom:1px solid var(--input-border);">
+                        <span th:text="${u.role}">Role</span>
+                    </td>
+
+                    <td style="padding:10px;border-bottom:1px solid var(--input-border);">
+
+                        <form th:action="@{/settings/delete-user/{id}(id=${u.id})}"
+                              method="post"
+                              style="display:inline;"
+                              onsubmit="return confirm('Delete this user?')">
+
+                            <button type="submit"
+                                    style="background:#fee2e2;
+                                       color:#dc2626;
+                                       border:none;
+                                       padding:6px 12px;
+                                       border-radius:6px;
+                                       cursor:pointer;
+                                       font-size:13px;">
+
+                                <i class="fas fa-trash"></i> Delete
+
+                            </button>
+
+                        </form>
+
+                    </td>
+
+                </tr>
+
+                </tbody>
+
+            </table>
+
+        </div>
+
     </main>
+    ```
+
 </div>
-<div class="toast" id="toast"></div>
-<script>
-    function showToast(msg,type='success'){const t=document.getElementById('toast');t.textContent=msg;t.className='toast '+type+' show';setTimeout(()=>t.classList.remove('show'),3000);}
-    function saveSettings(){showToast('All settings saved!','success');}
-</script>
+
 </body>
 </html>

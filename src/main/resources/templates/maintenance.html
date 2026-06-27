@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <script th:src="@{/js/theme.js}"></script>
+    <meta charset="UTF-8">
+    <title>Maintenance | SAMS</title>
+    <link rel="stylesheet" th:href="@{/css/sams-global.css}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:var(--modal-overlay);z-index:1000;justify-content:center;align-items:center;}
+        .modal-overlay.active{display:flex;}
+        .modal{background:var(--surface-bg);color:var(--text-body);border-radius:12px;padding:30px;width:450px;max-width:90%;max-height:90vh;overflow-y:auto;}
+        .modal h2{margin-bottom:20px;color:var(--text-heading);}
+        .modal input,.modal select,.modal textarea{width:100%;padding:10px;margin-bottom:12px;border:1px solid var(--input-border);border-radius:8px;font-size:14px;box-sizing:border-box;background:var(--surface-bg);color:var(--text-body);}
+        .modal textarea{height:80px;resize:vertical;}
+        .modal-btns{display:flex;gap:10px;justify-content:flex-end;margin-top:10px;}
+        .btn-cancel{padding:10px 20px;border:1px solid var(--input-border);border-radius:8px;background:var(--surface-bg);color:var(--text-body);cursor:pointer;}
+        .btn-save{padding:10px 20px;border:none;border-radius:8px;background:#4f46e5;color:#fff;cursor:pointer;}
+        .badge{padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600;}
+        .badge.open{background:#fee2e2;color:#dc2626;}
+        .badge.in-progress{background:#fef9c3;color:#ca8a04;}
+        .badge.resolved{background:#dcfce7;color:#16a34a;}
+        .badge.high{background:#fee2e2;color:#dc2626;}
+        .badge.medium{background:#fef9c3;color:#ca8a04;}
+        .badge.low{background:#dcfce7;color:#16a34a;}
+        .action-form{display:inline;}
+        table{width:100%;border-collapse:collapse;}
+        th,td{padding:10px 12px;text-align:left;border-bottom:1px solid var(--input-border);font-size:14px;}
+        th{color:var(--text-muted);font-weight:600;}
+        .table-card{background:var(--surface-bg);border-radius:14px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,0.08);}
+        .btn-sm{padding:5px 10px;border:none;border-radius:6px;cursor:pointer;font-size:12px;}
+        .btn-progress{background:#fef9c3;color:#ca8a04;}
+        .btn-resolve{background:#dcfce7;color:#16a34a;}
+        .btn-delete{background:#fee2e2;color:#dc2626;}
+    </style>
+</head>
+<body>
+<div class="container">
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+    <main class="main-content">
+        <div class="topbar">
+            <div><h1>🔧 Maintenance Requests</h1><p>Track and manage maintenance tasks</p></div>
+            <button class="add-btn" onclick="document.getElementById('addModal').classList.add('active')">
+                <i class="fas fa-plus"></i> New Request
+            </button>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card"><i class="fas fa-tools"></i><div><h2 th:text="${totalCount}">0</h2><p>Total</p></div></div>
+            <div class="stat-card"><i class="fas fa-exclamation-circle"></i><div><h2 th:text="${openCount}">0</h2><p>Open</p></div></div>
+            <div class="stat-card"><i class="fas fa-spinner"></i><div><h2 th:text="${inProgressCount}">0</h2><p>In Progress</p></div></div>
+            <div class="stat-card"><i class="fas fa-check-circle"></i><div><h2 th:text="${resolvedCount}">0</h2><p>Resolved</p></div></div>
+        </div>
+
+        <div class="table-card">
+            <table>
+                <thead>
+                <tr><th>Title</th><th>Apartment</th><th>Tenant</th><th>Priority</th><th>Assigned To</th><th>Status</th><th>Created</th><th>Actions</th></tr>
+                </thead>
+                <tbody>
+                <tr th:if="${#lists.isEmpty(requests)}">
+                    <td colspan="8" style="text-align:center;padding:40px;color:#888;">No maintenance requests yet.</td>
+                </tr>
+                <tr th:each="r : ${requests}">
+                    <td><strong th:text="${r.title}">—</strong><br><small th:text="${r.description}" style="color:#888;">—</small></td>
+                    <td th:text="${r.apartmentNumber}">—</td>
+                    <td th:text="${r.tenantName}">—</td>
+                    <td><span class="badge" th:classappend="${#strings.toLowerCase(r.priority)}" th:text="${r.priority}">—</span></td>
+                    <td th:text="${r.assignedTo != null ? r.assignedTo : '—'}">—</td>
+                    <td><span class="badge" th:classappend="${#strings.toLowerCase(#strings.replace(r.status,' ','-'))}" th:text="${r.status}">—</span></td>
+                    <td th:text="${r.createdDate != null ? r.createdDate : '—'}">—</td>
+                    <td style="display:flex;gap:4px;flex-wrap:wrap;">
+                        <form th:action="@{/maintenance/update-status/{id}(id=${r.id})}" method="post" class="action-form">
+                            <input type="hidden" name="status" value="In Progress">
+                            <button type="submit" class="btn-sm btn-progress" th:if="${r.status == 'Open'}">▶ Start</button>
+                        </form>
+                        <form th:action="@{/maintenance/update-status/{id}(id=${r.id})}" method="post" class="action-form">
+                            <input type="hidden" name="status" value="Resolved">
+                            <button type="submit" class="btn-sm btn-resolve" th:if="${r.status != 'Resolved'}">✓ Resolve</button>
+                        </form>
+                        <form th:action="@{/maintenance/delete/{id}(id=${r.id})}" method="post" class="action-form" onsubmit="return confirm('Delete?')">
+                            <button type="submit" class="btn-sm btn-delete"><i class="fas fa-trash"></i></button>
+                        </form>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+</div>
+
+<!-- Add Modal -->
+<div class="modal-overlay" id="addModal">
+    <div class="modal">
+        <h2>🔧 New Maintenance Request</h2>
+        <form th:action="@{/maintenance/add}" method="post">
+            <input type="text" name="title" placeholder="Issue Title" required>
+            <textarea name="description" placeholder="Describe the issue..."></textarea>
+            <input type="text" name="apartmentNumber" placeholder="Apartment Number (e.g. A101)" required>
+            <input type="text" name="tenantName" placeholder="Tenant Name">
+            <select name="priority" required>
+                <option value="">-- Priority --</option>
+                <option value="High">High</option>
+                <option value="Medium">Medium</option>
+                <option value="Low">Low</option>
+            </select>
+            <div class="modal-btns">
+                <button type="button" class="btn-cancel" onclick="document.getElementById('addModal').classList.remove('active')">Cancel</button>
+                <button type="submit" class="btn-save">Submit</button>
+            </div>
+        </form>
+    </div>
+</div>
+</body>
+</html>

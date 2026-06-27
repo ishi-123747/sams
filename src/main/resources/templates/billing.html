@@ -1,24 +1,24 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
+    <script th:src="@{/js/theme.js}"></script>
     <meta charset="UTF-8">
     <title>Billing | SAMS</title>
     <link rel="stylesheet" th:href="@{/css/sams-global.css}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
-        .modal-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; justify-content:center; align-items:center; }
-        .modal-overlay.active { display:flex; }
-        .modal { background:#fff; border-radius:12px; padding:30px; width:450px; max-width:90%; max-height:90vh; overflow-y:auto; }
-        .modal h2 { margin-bottom:20px; }
-        .modal input, .modal select { width:100%; padding:10px; margin-bottom:12px; border:1px solid #ddd; border-radius:8px; font-size:14px; box-sizing:border-box; }
-        .modal label { font-size:13px; color:#555; margin-bottom:4px; display:block; }
-        .modal-btns { display:flex; gap:10px; justify-content:flex-end; margin-top:10px; }
-        .btn-cancel { padding:10px 20px; border:1px solid #ddd; border-radius:8px; background:#fff; cursor:pointer; }
-        .btn-save { padding:10px 20px; border:none; border-radius:8px; background:#4f46e5; color:#fff; cursor:pointer; }
-        .empty-state { text-align:center; padding:60px 20px; color:#888; }
-        .empty-state i { font-size:48px; margin-bottom:15px; display:block; }
-        .btn-edit-row { background:#e0e7ff; color:#4f46e5; border:none; padding:6px 10px; border-radius:6px; cursor:pointer; margin-right:4px; }
-        .btn-delete-row { background:#fee2e2; color:#dc2626; border:none; padding:6px 10px; border-radius:6px; cursor:pointer; }
+        .modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:var(--modal-overlay);z-index:1000;justify-content:center;align-items:center;}
+        .modal-overlay.active{display:flex;}
+        .modal{background:var(--surface-bg);color:var(--text-body);border-radius:12px;padding:30px;width:450px;max-width:90%;max-height:90vh;overflow-y:auto;}
+        .modal h2{margin-bottom:20px;color:var(--text-heading);}
+        .modal input,.modal select{width:100%;padding:10px;margin-bottom:12px;border:1px solid var(--input-border);border-radius:8px;font-size:14px;box-sizing:border-box;background:var(--surface-bg);color:var(--text-body);}
+        .modal label{font-size:13px;color:var(--text-label);margin-bottom:4px;display:block;}
+        .modal-btns{display:flex;gap:10px;justify-content:flex-end;margin-top:10px;}
+        .btn-cancel{padding:10px 20px;border:1px solid var(--input-border);border-radius:8px;background:var(--surface-bg);color:var(--text-body);cursor:pointer;}
+        .btn-save{padding:10px 20px;border:none;border-radius:8px;background:#4f46e5;color:#fff;cursor:pointer;}
+        .btn-delete-row{background:#fee2e2;color:#dc2626;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;}
+        .btn-print{background:#ede9fe;color:#4f46e5;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;text-decoration:none;display:inline-block;}
+        .export-btn{display:inline-flex;align-items:center;gap:8px;padding:10px 18px;border-radius:10px;background:#16a34a;color:#fff;text-decoration:none;font-size:14px;font-weight:600;}
     </style>
 </head>
 <body>
@@ -30,143 +30,86 @@
                 <h1>💰 Billing &amp; Payments</h1>
                 <p>Manage invoices and payment records</p>
             </div>
-            <button class="primary-btn" onclick="openAddModal()"><i class="fas fa-plus"></i> New Invoice</button>
+            <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+                <a href="/export/billing" class="export-btn"><i class="fas fa-download"></i> Export CSV</a>
+                <button class="primary-btn" onclick="openAddModal()"><i class="fas fa-plus"></i> New Invoice</button>
+            </div>
         </div>
         <div class="cards">
-            <div class="card"><i class="fas fa-file-invoice-dollar"></i><h2 id="totalCollected">₹0</h2><p>Total Collected</p></div>
-            <div class="card"><i class="fas fa-clock"></i><h2 id="totalPending">₹0</h2><p>Pending</p></div>
-            <div class="card"><i class="fas fa-exclamation-circle"></i><h2 id="totalOverdue">₹0</h2><p>Overdue</p></div>
-            <div class="card"><i class="fas fa-hashtag"></i><h2 id="totalInvoices">0</h2><p>Total Invoices</p></div>
+            <div class="card"><i class="fas fa-file-invoice-dollar"></i><h2 th:text="${'₹' + #numbers.formatDecimal(totalRevenue,1,'COMMA',0,'POINT')}">₹0</h2><p>Total Collected</p></div>
+            <div class="card"><i class="fas fa-check-circle"></i><h2 th:text="${paidCount}">0</h2><p>Paid</p></div>
+            <div class="card"><i class="fas fa-hourglass-half"></i><h2 th:text="${pendingCount}">0</h2><p>Pending</p></div>
+            <div class="card"><i class="fas fa-exclamation-circle"></i><h2 th:text="${overdueCount}">0</h2><p>Overdue</p></div>
         </div>
         <div class="search-box">
-            <input type="text" id="searchInput" placeholder="Search by tenant, invoice or apartment..." oninput="filterInvoices()">
+            <input type="text" id="searchInput" placeholder="Search by tenant, invoice or apartment..." oninput="filterTable()">
         </div>
         <div class="table-card">
             <table>
                 <thead>
                 <tr><th>Invoice ID</th><th>Tenant</th><th>Apartment</th><th>Amount</th><th>Due Date</th><th>Status</th><th>Actions</th></tr>
                 </thead>
-                <tbody id="invoiceTableBody">
-                <tr><td colspan="7" style="text-align:center; padding:40px; color:#888;"><i class="fas fa-file-invoice" style="font-size:32px; display:block; margin-bottom:10px;"></i>No invoices yet. Click <strong>New Invoice</strong> to add one.</td></tr>
+                <tbody id="billingBody">
+                <tr th:if="${#lists.isEmpty(payments)}">
+                    <td colspan="7" style="text-align:center;padding:40px;color:#888;">No invoices yet. Click <strong>New Invoice</strong> to add one.</td>
+                </tr>
+                <tr th:each="p : ${payments}"
+                    th:attr="data-search=${#strings.toLowerCase((p.invoiceId!=null?p.invoiceId:'') + ' ' + (p.tenantName!=null?p.tenantName:'') + ' ' + (p.apartmentNumber!=null?p.apartmentNumber:''))}">
+                    <td th:text="${p.invoiceId}">—</td>
+                    <td th:text="${p.tenantName}">—</td>
+                    <td th:text="${p.apartmentNumber}">—</td>
+                    <td th:text="${'₹' + p.amount}">₹0</td>
+                    <td th:text="${p.dueDate!=null?p.dueDate:'—'}">—</td>
+                    <td><span class="badge" th:classappend="${#strings.toLowerCase(p.status)}" th:text="${p.status}">—</span></td>
+                    <td style="display:flex;gap:6px;">
+                        <a th:href="@{/billing/invoice/{id}(id=${p.id})}" target="_blank" class="btn-print">
+                            <i class="fas fa-print"></i>
+                        </a>
+                        <form th:action="@{/billing/delete/{id}(id=${p.id})}" method="post" style="display:inline;" onsubmit="return confirm('Delete this invoice?');">
+                            <button type="submit" class="btn-delete-row"><i class="fas fa-trash"></i></button>
+                        </form>
+                    </td>
+                </tr>
                 </tbody>
             </table>
         </div>
     </main>
 </div>
 
-<div class="modal-overlay" id="billingModal">
+<!-- Add Modal -->
+<div class="modal-overlay" id="addModal">
     <div class="modal">
-        <h2 id="modalTitle">💰 New Invoice</h2>
-        <input type="text" id="invTenant" placeholder="Tenant Name">
-        <input type="text" id="invApartment" placeholder="Apartment Number (e.g. A101)">
-        <input type="number" id="invAmount" placeholder="Amount (₹)">
-        <label>Due Date</label>
-        <input type="date" id="invDueDate">
-        <select id="invStatus">
-            <option value="">-- Payment Status --</option>
-            <option value="paid">Paid</option>
-            <option value="pending">Pending</option>
-            <option value="overdue">Overdue</option>
-        </select>
-        <div class="modal-btns">
-            <button class="btn-cancel" onclick="closeModal()">Cancel</button>
-            <button class="btn-save" onclick="saveInvoice()">Save</button>
-        </div>
+        <h2>💰 New Invoice</h2>
+        <form th:action="@{/billing/add}" method="post">
+            <input type="text" name="invoiceId" placeholder="Invoice ID (e.g. INV-001)" required>
+            <input type="text" name="tenantName" placeholder="Tenant Name" required>
+            <input type="text" name="apartmentNumber" placeholder="Apartment Number (e.g. A101)" required>
+            <input type="number" name="amount" placeholder="Amount (₹)" step="0.01" required>
+            <label>Due Date</label>
+            <input type="date" name="dueDate">
+            <select name="status" required>
+                <option value="">-- Payment Status --</option>
+                <option value="paid">Paid</option>
+                <option value="pending">Pending</option>
+                <option value="overdue">Overdue</option>
+            </select>
+            <div class="modal-btns">
+                <button type="button" class="btn-cancel" onclick="closeAddModal()">Cancel</button>
+                <button type="submit" class="btn-save">Save</button>
+            </div>
+        </form>
     </div>
 </div>
 
 <script>
-    let invoices = JSON.parse(localStorage.getItem('sams_invoices') || '[]');
-    let invoiceCounter = parseInt(localStorage.getItem('sams_invoice_counter') || '1');
-    let editIndex = -1;
-
-    function persist() {
-        localStorage.setItem('sams_invoices', JSON.stringify(invoices));
-        localStorage.setItem('sams_invoice_counter', String(invoiceCounter));
+    function openAddModal(){document.getElementById('addModal').classList.add('active');}
+    function closeAddModal(){document.getElementById('addModal').classList.remove('active');}
+    function filterTable(){
+        const term=document.getElementById('searchInput').value.toLowerCase();
+        document.querySelectorAll('#billingBody tr[data-search]').forEach(r=>{
+            r.style.display=(r.getAttribute('data-search')||'').includes(term)?'':'none';
+        });
     }
-
-    function openAddModal() {
-        editIndex = -1;
-        document.getElementById('modalTitle').textContent = '💰 New Invoice';
-        clearForm();
-        document.getElementById('billingModal').classList.add('active');
-    }
-
-    function openEditModal(i) {
-        editIndex = i;
-        const inv = invoices[i];
-        document.getElementById('modalTitle').textContent = '✏️ Edit Invoice';
-        document.getElementById('invTenant').value = inv.tenant;
-        document.getElementById('invApartment').value = inv.apartment;
-        document.getElementById('invAmount').value = inv.amount;
-        document.getElementById('invDueDate').value = inv.dueDate;
-        document.getElementById('invStatus').value = inv.status;
-        document.getElementById('billingModal').classList.add('active');
-    }
-
-    function closeModal() { document.getElementById('billingModal').classList.remove('active'); clearForm(); }
-
-    function saveInvoice() {
-        const tenant = document.getElementById('invTenant').value.trim();
-        const apartment = document.getElementById('invApartment').value.trim();
-        const amount = document.getElementById('invAmount').value.trim();
-        const dueDate = document.getElementById('invDueDate').value;
-        const status = document.getElementById('invStatus').value;
-
-        if (!tenant || !apartment || !amount || !status) { alert('Please fill in all required fields.'); return; }
-
-        if (editIndex === -1) {
-            const id = 'INV-' + String(invoiceCounter++).padStart(3, '0');
-            invoices.push({ id, tenant, apartment, amount, dueDate, status });
-        } else {
-            invoices[editIndex] = { ...invoices[editIndex], tenant, apartment, amount, dueDate, status };
-        }
-        persist(); renderInvoices(); updateStats(); clearForm(); closeModal();
-    }
-
-    function renderInvoices(filter = '') {
-        const tbody = document.getElementById('invoiceTableBody');
-        const filtered = invoices.map((inv, i) => ({ ...inv, i })).filter(inv =>
-            inv.tenant.toLowerCase().includes(filter) ||
-            inv.apartment.toLowerCase().includes(filter) ||
-            inv.id.toLowerCase().includes(filter)
-        );
-        if (filtered.length === 0) { tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:40px; color:#888;">No invoices found.</td></tr>`; return; }
-        tbody.innerHTML = filtered.map(inv => `
-            <tr>
-                <td>${inv.id}</td><td>${inv.tenant}</td><td>${inv.apartment}</td>
-                <td>₹${Number(inv.amount).toLocaleString()}</td>
-                <td>${inv.dueDate || '—'}</td>
-                <td><span class="status ${inv.status}">${inv.status.charAt(0).toUpperCase() + inv.status.slice(1)}</span></td>
-                <td>
-                    <button class="btn-edit-row" onclick="openEditModal(${inv.i})"><i class="fas fa-pen"></i></button>
-                    <button class="btn-delete-row" onclick="deleteInvoice(${inv.i})"><i class="fas fa-trash"></i></button>
-                </td>
-            </tr>`).join('');
-    }
-
-    function deleteInvoice(index) {
-        if (confirm('Delete this invoice?')) { invoices.splice(index, 1); persist(); renderInvoices(); updateStats(); }
-    }
-
-    function updateStats() {
-        const paid = invoices.filter(i => i.status === 'paid').reduce((s, i) => s + Number(i.amount), 0);
-        const pending = invoices.filter(i => i.status === 'pending').reduce((s, i) => s + Number(i.amount), 0);
-        const overdue = invoices.filter(i => i.status === 'overdue').reduce((s, i) => s + Number(i.amount), 0);
-        document.getElementById('totalCollected').textContent = '₹' + paid.toLocaleString();
-        document.getElementById('totalPending').textContent = '₹' + pending.toLocaleString();
-        document.getElementById('totalOverdue').textContent = '₹' + overdue.toLocaleString();
-        document.getElementById('totalInvoices').textContent = invoices.length;
-    }
-
-    function filterInvoices() { renderInvoices(document.getElementById('searchInput').value.toLowerCase()); }
-
-    function clearForm() {
-        ['invTenant','invApartment','invAmount','invDueDate'].forEach(id => document.getElementById(id).value = '');
-        document.getElementById('invStatus').value = '';
-    }
-
-    renderInvoices(); updateStats();
 </script>
 </body>
 </html>

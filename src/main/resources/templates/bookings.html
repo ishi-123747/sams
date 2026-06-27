@@ -1,22 +1,24 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
+    <script th:src="@{/js/theme.js}"></script>
     <meta charset="UTF-8">
     <title>Bookings | SAMS</title>
     <link rel="stylesheet" th:href="@{/css/sams-global.css}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
-        .modal-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; justify-content:center; align-items:center; }
-        .modal-overlay.active { display:flex; }
-        .modal { background:#fff; border-radius:12px; padding:30px; width:450px; max-width:90%; max-height:90vh; overflow-y:auto; }
-        .modal h2 { margin-bottom:20px; }
-        .modal input, .modal select { width:100%; padding:10px; margin-bottom:12px; border:1px solid #ddd; border-radius:8px; font-size:14px; box-sizing:border-box; }
-        .modal label { font-size:13px; color:#555; margin-bottom:4px; display:block; }
-        .modal-btns { display:flex; gap:10px; justify-content:flex-end; margin-top:10px; }
-        .btn-cancel { padding:10px 20px; border:1px solid #ddd; border-radius:8px; background:#fff; cursor:pointer; }
-        .btn-save { padding:10px 20px; border:none; border-radius:8px; background:#4f46e5; color:#fff; cursor:pointer; }
-        .empty-state { text-align:center; padding:60px 20px; color:#888; }
-        .empty-state i { font-size:48px; margin-bottom:15px; display:block; }
+        .modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:var(--modal-overlay);z-index:1000;justify-content:center;align-items:center;}
+        .modal-overlay.active{display:flex;}
+        .modal{background:var(--surface-bg);color:var(--text-body);border-radius:12px;padding:30px;width:450px;max-width:90%;max-height:90vh;overflow-y:auto;}
+        .modal h2{margin-bottom:20px;color:var(--text-heading);}
+        .modal input,.modal select{width:100%;padding:10px;margin-bottom:12px;border:1px solid var(--input-border);border-radius:8px;font-size:14px;box-sizing:border-box;background:var(--surface-bg);color:var(--text-body);}
+        .modal label{font-size:13px;color:var(--text-label);margin-bottom:4px;display:block;}
+        .modal-btns{display:flex;gap:10px;justify-content:flex-end;margin-top:10px;}
+        .btn-cancel{padding:10px 20px;border:1px solid var(--input-border);border-radius:8px;background:var(--surface-bg);color:var(--text-body);cursor:pointer;}
+        .btn-save{padding:10px 20px;border:none;border-radius:8px;background:#4f46e5;color:#fff;cursor:pointer;}
+        .empty-state{text-align:center;padding:60px 20px;color:var(--text-muted);}
+        .empty-state i{font-size:48px;margin-bottom:15px;display:block;}
+        .export-btn{display:inline-flex;align-items:center;gap:8px;padding:10px 18px;border-radius:10px;background:#16a34a;color:#fff;text-decoration:none;font-size:14px;font-weight:600;}
     </style>
 </head>
 <body>
@@ -28,137 +30,128 @@
                 <h1>📅 Booking Management</h1>
                 <p>Manage reservations and apartment occupancy</p>
             </div>
-            <button class="add-btn" onclick="openAddModal()"><i class="fas fa-plus"></i> New Booking</button>
+            <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+                <a href="/export/bookings" class="export-btn"><i class="fas fa-download"></i> Export CSV</a>
+                <button class="add-btn" onclick="openAddModal()"><i class="fas fa-plus"></i> New Booking</button>
+            </div>
         </div>
         <div class="stats">
-            <div class="stat-card"><i class="fas fa-calendar-check"></i><div><h2 id="totalCount">0</h2><p>Total Bookings</p></div></div>
-            <div class="stat-card"><i class="fas fa-check-circle"></i><div><h2 id="confirmedCount">0</h2><p>Confirmed</p></div></div>
-            <div class="stat-card"><i class="fas fa-clock"></i><div><h2 id="pendingCount">0</h2><p>Pending</p></div></div>
-            <div class="stat-card"><i class="fas fa-flag-checkered"></i><div><h2 id="completedCount">0</h2><p>Completed</p></div></div>
+            <div class="stat-card"><i class="fas fa-calendar-check"></i><div><h2 th:text="${totalCount}">0</h2><p>Total Bookings</p></div></div>
+            <div class="stat-card"><i class="fas fa-check-circle"></i><div><h2 th:text="${confirmedCount}">0</h2><p>Confirmed</p></div></div>
+            <div class="stat-card"><i class="fas fa-clock"></i><div><h2 th:text="${pendingCount}">0</h2><p>Pending</p></div></div>
+            <div class="stat-card"><i class="fas fa-flag-checkered"></i><div><h2 th:text="${completedCount}">0</h2><p>Completed</p></div></div>
         </div>
         <div class="search-box">
-            <input type="text" id="searchInput" placeholder="Search booking, guest or apartment..." oninput="filterBookings()">
+            <input type="text" id="searchInput" placeholder="Search booking, guest or apartment..." oninput="filterCards()">
             <button><i class="fas fa-search"></i></button>
         </div>
         <div class="booking-grid" id="bookingGrid">
-            <div class="empty-state"><i class="fas fa-calendar-check"></i><p>No bookings added yet. Click <strong>New Booking</strong> to get started.</p></div>
+            <div th:if="${#lists.isEmpty(bookings)}" class="empty-state">
+                <i class="fas fa-calendar-check"></i>
+                <p>No bookings yet. Click <strong>New Booking</strong> to get started.</p>
+            </div>
+            <div class="booking-card" th:each="b : ${bookings}"
+                 th:attr="data-search=${#strings.toLowerCase(b.tenantName + ' ' + b.apartmentNumber)}">
+                <div class="booking-content">
+                    <div class="guest">
+                        <div>
+                            <h3 th:text="${b.tenantName}">Guest</h3>
+                            <p th:text="${b.apartmentNumber}">Apt</p>
+                        </div>
+                    </div>
+                    <span class="status" th:classappend="${#strings.toLowerCase(b.status)}" th:text="${b.status}">Status</span>
+                    <div class="dates">
+                        <div><strong>Check In</strong><p th:text="${b.checkInDate!=null?b.checkInDate:'—'}">—</p></div>
+                        <div><strong>Check Out</strong><p th:text="${b.checkOutDate!=null?b.checkOutDate:'—'}">—</p></div>
+                    </div>
+                    <div class="price" th:text="${b.amount>0?'₹'+b.amount:'—'}">—</div>
+                    <div class="actions">
+                        <button class="btn-edit" th:onclick="'openEditModal('+${b.id}+')'"><i class="fas fa-pen"></i></button>
+                        <form th:action="@{/bookings/delete/{id}(id=${b.id})}" method="post" style="margin:0;" onsubmit="return confirm('Delete this booking?');">
+                            <button type="submit" class="btn-delete"><i class="fas fa-trash"></i></button>
+                        </form>
+                    </div>
+                </div>
+            </div>
         </div>
     </main>
 </div>
 
-<div class="modal-overlay" id="bookingModal">
+<!-- Add Modal -->
+<div class="modal-overlay" id="addModal">
     <div class="modal">
-        <h2 id="modalTitle">📅 New Booking</h2>
-        <input type="text" id="bGuest" placeholder="Guest / Tenant Name">
-        <input type="text" id="bApartment" placeholder="Apartment (e.g. A101 Luxury Suite)">
-        <input type="number" id="bAmount" placeholder="Amount (₹)">
-        <label>Check In</label>
-        <input type="date" id="bCheckIn">
-        <label>Check Out</label>
-        <input type="date" id="bCheckOut">
-        <select id="bStatus">
-            <option value="">-- Status --</option>
-            <option value="confirmed">Confirmed</option>
-            <option value="pending">Pending</option>
-            <option value="completed">Completed</option>
-        </select>
-        <div class="modal-btns">
-            <button class="btn-cancel" onclick="closeModal()">Cancel</button>
-            <button class="btn-save" onclick="saveBooking()">Save</button>
-        </div>
+        <h2>📅 New Booking</h2>
+        <form th:action="@{/bookings/add}" method="post">
+            <input type="text" name="tenantName" placeholder="Guest / Tenant Name" required>
+            <input type="text" name="apartmentNumber" placeholder="Apartment Number (e.g. A101)" required>
+            <input type="number" name="amount" placeholder="Amount (₹)" step="0.01">
+            <label>Check In</label>
+            <input type="date" name="checkInDate">
+            <label>Check Out</label>
+            <input type="date" name="checkOutDate">
+            <select name="status" required>
+                <option value="">-- Status --</option>
+                <option value="confirmed">Confirmed</option>
+                <option value="pending">Pending</option>
+                <option value="completed">Completed</option>
+            </select>
+            <div class="modal-btns">
+                <button type="button" class="btn-cancel" onclick="closeAddModal()">Cancel</button>
+                <button type="submit" class="btn-save">Save</button>
+            </div>
+        </form>
     </div>
 </div>
 
-<script>
-    let bookings = JSON.parse(localStorage.getItem('sams_bookings') || '[]');
-    let editIndex = -1;
+<!-- Edit Modal -->
+<div class="modal-overlay" id="editModal">
+    <div class="modal">
+        <h2>✏️ Edit Booking</h2>
+        <form th:action="@{/bookings/edit}" method="post">
+            <input type="hidden" id="editId" name="id">
+            <input type="text" id="editGuest" name="tenantName" placeholder="Guest / Tenant Name" required>
+            <input type="text" id="editApartment" name="apartmentNumber" placeholder="Apartment Number" required>
+            <input type="number" id="editAmount" name="amount" placeholder="Amount (₹)" step="0.01">
+            <label>Check In</label>
+            <input type="date" id="editCheckIn" name="checkInDate">
+            <label>Check Out</label>
+            <input type="date" id="editCheckOut" name="checkOutDate">
+            <select id="editStatus" name="status" required>
+                <option value="">-- Status --</option>
+                <option value="confirmed">Confirmed</option>
+                <option value="pending">Pending</option>
+                <option value="completed">Completed</option>
+            </select>
+            <div class="modal-btns">
+                <button type="button" class="btn-cancel" onclick="closeEditModal()">Cancel</button>
+                <button type="submit" class="btn-save">Save</button>
+            </div>
+        </form>
+    </div>
+</div>
 
-    function persist() { localStorage.setItem('sams_bookings', JSON.stringify(bookings)); }
-
-    function openAddModal() {
-        editIndex = -1;
-        document.getElementById('modalTitle').textContent = '📅 New Booking';
-        clearForm();
-        document.getElementById('bookingModal').classList.add('active');
+<script th:inline="javascript">
+    const bookings=/*[[${bookings}]]*/[];
+    function openAddModal(){document.getElementById('addModal').classList.add('active');}
+    function closeAddModal(){document.getElementById('addModal').classList.remove('active');}
+    function openEditModal(id){
+        const b=bookings.find(x=>x.id===id); if(!b)return;
+        document.getElementById('editId').value=b.id;
+        document.getElementById('editGuest').value=b.tenantName||'';
+        document.getElementById('editApartment').value=b.apartmentNumber||'';
+        document.getElementById('editAmount').value=b.amount||'';
+        document.getElementById('editCheckIn').value=b.checkInDate||'';
+        document.getElementById('editCheckOut').value=b.checkOutDate||'';
+        document.getElementById('editStatus').value=b.status||'';
+        document.getElementById('editModal').classList.add('active');
     }
-
-    function openEditModal(i) {
-        editIndex = i;
-        const b = bookings[i];
-        document.getElementById('modalTitle').textContent = '✏️ Edit Booking';
-        document.getElementById('bGuest').value = b.guest;
-        document.getElementById('bApartment').value = b.apartment;
-        document.getElementById('bAmount').value = b.amount;
-        document.getElementById('bCheckIn').value = b.checkIn;
-        document.getElementById('bCheckOut').value = b.checkOut;
-        document.getElementById('bStatus').value = b.status;
-        document.getElementById('bookingModal').classList.add('active');
+    function closeEditModal(){document.getElementById('editModal').classList.remove('active');}
+    function filterCards(){
+        const term=document.getElementById('searchInput').value.toLowerCase();
+        document.querySelectorAll('#bookingGrid .booking-card').forEach(c=>{
+            c.style.display=(c.getAttribute('data-search')||'').includes(term)?'':'none';
+        });
     }
-
-    function closeModal() { document.getElementById('bookingModal').classList.remove('active'); clearForm(); }
-
-    function saveBooking() {
-        const guest = document.getElementById('bGuest').value.trim();
-        const apartment = document.getElementById('bApartment').value.trim();
-        const amount = document.getElementById('bAmount').value.trim();
-        const checkIn = document.getElementById('bCheckIn').value;
-        const checkOut = document.getElementById('bCheckOut').value;
-        const status = document.getElementById('bStatus').value;
-
-        if (!guest || !apartment || !status) { alert('Please fill in Guest, Apartment and Status.'); return; }
-
-        if (editIndex === -1) {
-            bookings.push({ guest, apartment, amount, checkIn, checkOut, status });
-        } else {
-            bookings[editIndex] = { guest, apartment, amount, checkIn, checkOut, status };
-        }
-        persist(); renderBookings(); updateStats(); clearForm(); closeModal();
-    }
-
-    function renderBookings(filter = '') {
-        const grid = document.getElementById('bookingGrid');
-        const filtered = bookings.map((b, i) => ({ ...b, i })).filter(b =>
-            b.guest.toLowerCase().includes(filter) ||
-            b.apartment.toLowerCase().includes(filter)
-        );
-        if (filtered.length === 0) { grid.innerHTML = `<div class="empty-state"><i class="fas fa-calendar-check"></i><p>No bookings found.</p></div>`; return; }
-        grid.innerHTML = filtered.map(b => `
-            <div class="booking-card">
-                <div class="booking-content">
-                    <div class="guest"><div><h3>${b.guest}</h3><p>${b.apartment}</p></div></div>
-                    <span class="status ${b.status}">${b.status.charAt(0).toUpperCase() + b.status.slice(1)}</span>
-                    <div class="dates">
-                        <div><strong>Check In</strong><p>${b.checkIn || '—'}</p></div>
-                        <div><strong>Check Out</strong><p>${b.checkOut || '—'}</p></div>
-                    </div>
-                    <div class="price">${b.amount ? '₹' + Number(b.amount).toLocaleString() : '—'}</div>
-                    <div class="actions">
-                        <button class="btn-edit" onclick="openEditModal(${b.i})"><i class="fas fa-pen"></i></button>
-                        <button class="btn-delete" onclick="deleteBooking(${b.i})"><i class="fas fa-trash"></i></button>
-                    </div>
-                </div>
-            </div>`).join('');
-    }
-
-    function deleteBooking(index) {
-        if (confirm('Delete this booking?')) { bookings.splice(index, 1); persist(); renderBookings(); updateStats(); }
-    }
-
-    function updateStats() {
-        document.getElementById('totalCount').textContent = bookings.length;
-        document.getElementById('confirmedCount').textContent = bookings.filter(b => b.status === 'confirmed').length;
-        document.getElementById('pendingCount').textContent = bookings.filter(b => b.status === 'pending').length;
-        document.getElementById('completedCount').textContent = bookings.filter(b => b.status === 'completed').length;
-    }
-
-    function filterBookings() { renderBookings(document.getElementById('searchInput').value.toLowerCase()); }
-
-    function clearForm() {
-        ['bGuest','bApartment','bAmount','bCheckIn','bCheckOut'].forEach(id => document.getElementById(id).value = '');
-        document.getElementById('bStatus').value = '';
-    }
-
-    renderBookings(); updateStats();
 </script>
 </body>
 </html>

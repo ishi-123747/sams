@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <script th:src="@{/js/theme.js}"></script>
+    <meta charset="UTF-8">
+    <title>Vacancy Calendar | SAMS</title>
+    <link rel="stylesheet" th:href="@{/css/sams-global.css}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;}
+        .cal-nav{display:flex;gap:10px;align-items:center;}
+        .cal-nav button{padding:8px 16px;border:1px solid var(--input-border);border-radius:8px;background:var(--surface-bg);color:var(--text-body);cursor:pointer;font-size:14px;}
+        .cal-nav h2{font-size:18px;color:var(--text-heading);min-width:160px;text-align:center;}
+        .calendar{background:var(--surface-bg);border-radius:14px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,0.08);}
+        .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
+        .cal-day-name{text-align:center;font-size:12px;font-weight:600;color:var(--text-muted);padding:8px 0;}
+        .cal-cell{min-height:80px;border:1px solid var(--input-border);border-radius:8px;padding:6px;font-size:12px;}
+        .cal-cell.empty{background:transparent;border-color:transparent;}
+        .cal-cell.today{border-color:#4f46e5;background:#f0effe;}
+        .cal-date{font-weight:700;font-size:13px;margin-bottom:4px;color:var(--text-heading);}
+        .apt-tag{display:block;padding:2px 6px;border-radius:4px;margin-bottom:2px;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+        .apt-tag.occupied{background:#fee2e2;color:#dc2626;}
+        .apt-tag.vacant{background:#dcfce7;color:#16a34a;}
+        .apt-tag.maintenance{background:#fef9c3;color:#ca8a04;}
+        .legend{display:flex;gap:16px;margin-bottom:16px;flex-wrap:wrap;}
+        .legend-item{display:flex;align-items:center;gap:6px;font-size:13px;}
+        .legend-dot{width:12px;height:12px;border-radius:50%;}
+        .dot-occupied{background:#dc2626;}
+        .dot-vacant{background:#16a34a;}
+        .dot-maintenance{background:#ca8a04;}
+        .apt-list{background:var(--surface-bg);border-radius:14px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,0.08);margin-top:20px;}
+        .apt-list h3{margin:0 0 16px;color:var(--text-heading);}
+        .apt-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--input-border);}
+        .apt-row:last-child{border-bottom:none;}
+        .badge{padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600;}
+        .badge.occupied{background:#fee2e2;color:#dc2626;}
+        .badge.vacant{background:#dcfce7;color:#16a34a;}
+        .badge.maintenance{background:#fef9c3;color:#ca8a04;}
+    </style>
+</head>
+<body>
+<div class="container">
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+    <main class="main-content">
+        <div class="topbar">
+            <div><h1>📅 Vacancy Calendar</h1><p>Visual overview of apartment availability</p></div>
+        </div>
+
+        <div class="legend">
+            <div class="legend-item"><div class="legend-dot dot-vacant"></div> Vacant</div>
+            <div class="legend-item"><div class="legend-dot dot-occupied"></div> Occupied</div>
+            <div class="legend-item"><div class="legend-dot dot-maintenance"></div> Maintenance</div>
+        </div>
+
+        <div class="calendar">
+            <div class="cal-header">
+                <div class="cal-nav">
+                    <button onclick="changeMonth(-1)">&#8592; Prev</button>
+                    <h2 id="calTitle">June 2026</h2>
+                    <button onclick="changeMonth(1)">Next &#8594;</button>
+                </div>
+            </div>
+            <div class="cal-grid" id="calGrid">
+                <div class="cal-day-name">Sun</div>
+                <div class="cal-day-name">Mon</div>
+                <div class="cal-day-name">Tue</div>
+                <div class="cal-day-name">Wed</div>
+                <div class="cal-day-name">Thu</div>
+                <div class="cal-day-name">Fri</div>
+                <div class="cal-day-name">Sat</div>
+            </div>
+        </div>
+
+        <!-- Apartment Status List -->
+        <div class="apt-list">
+            <h3>🏢 All Apartments — Current Status</h3>
+            <div th:each="a : ${apartments}" class="apt-row">
+                <div>
+                    <strong th:text="${a.apartmentNumber + ' — ' + a.apartmentName}">—</strong>
+                    <div style="font-size:13px;color:#888;" th:text="${a.location}">—</div>
+                </div>
+                <div style="text-align:right;">
+                    <div th:text="${a.tenantName != null ? a.tenantName : 'No Tenant'}" style="font-size:13px;margin-bottom:4px;">—</div>
+                    <span class="badge" th:classappend="${#strings.toLowerCase(a.status)}" th:text="${a.status}">—</span>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script th:inline="javascript">
+    const apartments = /*[[${apartments}]]*/ [];
+    let currentDate = new Date();
+
+    function renderCalendar() {
+        const year = currentDate.getFullYear();
+        const month = currentDate.getMonth();
+        const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+        document.getElementById('calTitle').textContent = monthNames[month] + ' ' + year;
+
+        const firstDay = new Date(year, month, 1).getDay();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        const today = new Date();
+
+        const grid = document.getElementById('calGrid');
+        // Remove all cells but keep day names
+        while (grid.children.length > 7) grid.removeChild(grid.lastChild);
+
+        // Empty cells
+        for (let i = 0; i < firstDay; i++) {
+            const empty = document.createElement('div');
+            empty.className = 'cal-cell empty';
+            grid.appendChild(empty);
+        }
+
+        // Day cells
+        for (let d = 1; d <= daysInMonth; d++) {
+            const cell = document.createElement('div');
+            const isToday = today.getDate() === d && today.getMonth() === month && today.getFullYear() === year;
+            cell.className = 'cal-cell' + (isToday ? ' today' : '');
+
+            const dateDiv = document.createElement('div');
+            dateDiv.className = 'cal-date';
+            dateDiv.textContent = d;
+            cell.appendChild(dateDiv);
+
+            // Show apartments (just show all since we don't have date-specific bookings)
+            if (d === today.getDate() && isToday) {
+                apartments.slice(0, 3).forEach(a => {
+                    const tag = document.createElement('span');
+                    tag.className = 'apt-tag ' + (a.status || '').toLowerCase();
+                    tag.textContent = a.apartmentNumber;
+                    cell.appendChild(tag);
+                });
+            }
+            grid.appendChild(cell);
+        }
+    }
+
+    function changeMonth(dir) {
+        currentDate.setMonth(currentDate.getMonth() + dir);
+        renderCalendar();
+    }
+
+    renderCalendar();
+</script>
+</body>
+</html>

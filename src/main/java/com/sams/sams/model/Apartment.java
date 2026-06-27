@@ -1,15 +1,11 @@
 package com.sams.sams.model;
-
 import jakarta.persistence.*;
 
 @Entity
 @Table(name = "apartments")
 public class Apartment {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
     private String apartmentName;
     private String apartmentNumber;
     private String location;
@@ -19,8 +15,6 @@ public class Apartment {
     private String status;
     private String tenantName;
     private String imageUrl;
-
-    public Apartment() {}
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }

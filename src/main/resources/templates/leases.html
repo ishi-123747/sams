@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <script th:src="@{/js/theme.js}"></script>
+    <meta charset="UTF-8">
+    <title>Leases | SAMS</title>
+    <link rel="stylesheet" th:href="@{/css/sams-global.css}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:var(--modal-overlay);z-index:1000;justify-content:center;align-items:center;}
+        .modal-overlay.active{display:flex;}
+        .modal{background:var(--surface-bg);color:var(--text-body);border-radius:12px;padding:30px;width:480px;max-width:90%;max-height:90vh;overflow-y:auto;}
+        .modal h2{margin-bottom:20px;color:var(--text-heading);}
+        .modal input,.modal select{width:100%;padding:10px;margin-bottom:12px;border:1px solid var(--input-border);border-radius:8px;font-size:14px;box-sizing:border-box;background:var(--surface-bg);color:var(--text-body);}
+        .modal label{font-size:13px;color:var(--text-muted);margin-bottom:4px;display:block;}
+        .modal-btns{display:flex;gap:10px;justify-content:flex-end;margin-top:10px;}
+        .btn-cancel{padding:10px 20px;border:1px solid var(--input-border);border-radius:8px;background:var(--surface-bg);color:var(--text-body);cursor:pointer;}
+        .btn-save{padding:10px 20px;border:none;border-radius:8px;background:#4f46e5;color:#fff;cursor:pointer;}
+        table{width:100%;border-collapse:collapse;}
+        th,td{padding:10px 12px;text-align:left;border-bottom:1px solid var(--input-border);font-size:14px;}
+        th{color:var(--text-muted);font-weight:600;}
+        .table-card{background:var(--surface-bg);border-radius:14px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,0.08);}
+        .badge{padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600;}
+        .badge.active{background:#dcfce7;color:#16a34a;}
+        .badge.expired{background:#fee2e2;color:#dc2626;}
+        .badge.terminated{background:#f3f4f6;color:#6b7280;}
+        .btn-delete{background:#fee2e2;color:#dc2626;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;}
+        .btn-view{background:#ede9fe;color:#4f46e5;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;text-decoration:none;display:inline-block;}
+    </style>
+</head>
+<body>
+<div class="container">
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+    <main class="main-content">
+        <div class="topbar">
+            <div><h1>📄 Lease Agreements</h1><p>Manage rental agreements and contracts</p></div>
+            <button class="add-btn" onclick="document.getElementById('addModal').classList.add('active')">
+                <i class="fas fa-plus"></i> Add Lease
+            </button>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card"><i class="fas fa-file-contract"></i><div><h2 th:text="${totalCount}">0</h2><p>Total Leases</p></div></div>
+            <div class="stat-card"><i class="fas fa-check-circle"></i><div><h2 th:text="${activeCount}">0</h2><p>Active</p></div></div>
+            <div class="stat-card"><i class="fas fa-times-circle"></i><div><h2 th:text="${expiredCount}">0</h2><p>Expired</p></div></div>
+        </div>
+
+        <div class="table-card">
+            <table>
+                <thead>
+                <tr><th>Tenant</th><th>Apartment</th><th>Start</th><th>End</th><th>Rent</th><th>Deposit</th><th>Status</th><th>Agreement</th><th>Actions</th></tr>
+                </thead>
+                <tbody>
+                <tr th:if="${#lists.isEmpty(leases)}">
+                    <td colspan="9" style="text-align:center;padding:40px;color:#888;">No leases added yet.</td>
+                </tr>
+                <tr th:each="l : ${leases}">
+                    <td th:text="${l.tenantName}">—</td>
+                    <td th:text="${l.apartmentNumber}">—</td>
+                    <td th:text="${l.startDate}">—</td>
+                    <td th:text="${l.endDate}">—</td>
+                    <td th:text="${'₹' + l.rentAmount}">—</td>
+                    <td th:text="${'₹' + l.depositAmount}">—</td>
+                    <td><span class="badge" th:classappend="${#strings.toLowerCase(l.status)}" th:text="${l.status}">—</span></td>
+                    <td>
+                        <a th:if="${l.filePath != null}" th:href="${l.filePath}" target="_blank" class="btn-view">
+                            <i class="fas fa-file"></i> View
+                        </a>
+                        <span th:if="${l.filePath == null}" style="color:#888;font-size:13px;">No file</span>
+                    </td>
+                    <td>
+                        <form th:action="@{/leases/delete/{id}(id=${l.id})}" method="post" style="display:inline;" onsubmit="return confirm('Delete lease?')">
+                            <button type="submit" class="btn-delete"><i class="fas fa-trash"></i></button>
+                        </form>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+</div>
+
+<!-- Add Modal -->
+<div class="modal-overlay" id="addModal">
+    <div class="modal">
+        <h2>📄 Add Lease Agreement</h2>
+        <form th:action="@{/leases/add}" method="post" enctype="multipart/form-data">
+            <input type="text" name="tenantName" placeholder="Tenant Name" required>
+            <input type="text" name="apartmentNumber" placeholder="Apartment Number (e.g. A101)" required>
+            <label>Lease Start Date</label>
+            <input type="date" name="startDate" required>
+            <label>Lease End Date</label>
+            <input type="date" name="endDate" required>
+            <input type="number" name="rentAmount" placeholder="Monthly Rent (₹)" step="0.01" required>
+            <input type="number" name="depositAmount" placeholder="Deposit Amount (₹)" step="0.01">
+            <select name="status" required>
+                <option value="">-- Status --</option>
+                <option value="Active">Active</option>
+                <option value="Expired">Expired</option>
+                <option value="Terminated">Terminated</option>
+            </select>
+            <label>Upload Agreement (PDF/Image)</label>
+            <input type="file" name="agreementFile" accept=".pdf,.jpg,.png,.jpeg">
+            <div class="modal-btns">
+                <button type="button" class="btn-cancel" onclick="document.getElementById('addModal').classList.remove('active')">Cancel</button>
+                <button type="submit" class="btn-save">Save</button>
+            </div>
+        </form>
+    </div>
+</div>
+</body>
+</html>

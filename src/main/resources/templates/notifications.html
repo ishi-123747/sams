@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <script th:src="@{/js/theme.js}"></script>
+    <meta charset="UTF-8">
+    <title>Notifications | SAMS</title>
+    <link rel="stylesheet" th:href="@{/css/sams-global.css}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .notif-list{display:flex;flex-direction:column;gap:14px;}
+        .notif-item{background:var(--surface-bg);border-radius:12px;padding:18px 22px;display:flex;align-items:flex-start;gap:16px;box-shadow:0 2px 8px rgba(0,0,0,0.07);}
+        .notif-icon{font-size:22px;padding:10px;border-radius:10px;min-width:44px;text-align:center;}
+        .ic-red{background:#fee2e2;color:#dc2626;}
+        .ic-yellow{background:#fef9c3;color:#ca8a04;}
+        .ic-blue{background:#ede9fe;color:#4f46e5;}
+        .ic-green{background:#dcfce7;color:#16a34a;}
+        .notif-content h4{margin:0 0 4px;color:var(--text-heading);font-size:15px;}
+        .notif-content p{margin:0;color:var(--text-muted);font-size:13px;}
+        .empty{text-align:center;padding:60px;color:var(--text-muted);}
+    </style>
+</head>
+<body>
+<div class="container">
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+    <main class="main-content">
+        <div class="topbar">
+            <div><h1>🔔 Notifications & Alerts</h1><p>System alerts and reminders</p></div>
+        </div>
+
+        <div class="notif-list">
+            <!-- Overdue Payments -->
+            <div th:each="p : ${overduePayments}" class="notif-item">
+                <div class="notif-icon ic-red"><i class="fas fa-exclamation-circle"></i></div>
+                <div class="notif-content">
+                    <h4>Overdue Payment — <span th:text="${p.invoiceId}">—</span></h4>
+                    <p><span th:text="${p.tenantName}">—</span> | Apt <span th:text="${p.apartmentNumber}">—</span> | ₹<span th:text="${p.amount}">0</span> overdue</p>
+                </div>
+            </div>
+
+            <!-- Pending Payments -->
+            <div th:each="p : ${pendingPayments}" class="notif-item">
+                <div class="notif-icon ic-yellow"><i class="fas fa-hourglass-half"></i></div>
+                <div class="notif-content">
+                    <h4>Payment Pending — <span th:text="${p.invoiceId}">—</span></h4>
+                    <p><span th:text="${p.tenantName}">—</span> | Due: <span th:text="${p.dueDate}">—</span> | ₹<span th:text="${p.amount}">0</span></p>
+                </div>
+            </div>
+
+            <!-- Open Complaints -->
+            <div th:each="c : ${openComplaints}" class="notif-item">
+                <div class="notif-icon ic-blue"><i class="fas fa-tools"></i></div>
+                <div class="notif-content">
+                    <h4>Open Complaint — <span th:text="${c.title}">—</span></h4>
+                    <p>Apt <span th:text="${c.apartmentNumber}">—</span> | <span th:text="${c.description}">—</span></p>
+                </div>
+            </div>
+
+            <!-- Vacant Apartments -->
+            <div th:each="a : ${vacantApartments}" class="notif-item">
+                <div class="notif-icon ic-green"><i class="fas fa-door-open"></i></div>
+                <div class="notif-content">
+                    <h4>Apartment Vacant — <span th:text="${a.apartmentNumber}">—</span></h4>
+                    <p><span th:text="${a.apartmentName}">—</span> | <span th:text="${a.location}">—</span> | ₹<span th:text="${a.rent}">0</span>/mo</p>
+                </div>
+            </div>
+
+            <div th:if="${totalAlerts == 0}" class="empty">
+                <i class="fas fa-check-circle" style="font-size:48px;color:#16a34a;display:block;margin-bottom:12px;"></i>
+                <p>All clear! No alerts at this time.</p>
+            </div>
+        </div>
+    </main>
+</div>
+</body>
+</html>

@@ -1,68 +1,100 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
+    <script th:src="@{/js/theme.js}"></script>
     <meta charset="UTF-8">
     <title>Reports | SAMS</title>
     <link rel="stylesheet" th:href="@{/css/sams-global.css}">
-
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    <style>
+        .report-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:30px;}
+        .report-box{background:var(--surface-bg);border-radius:14px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,0.08);}
+        .report-box h3{margin:0 0 16px;color:var(--text-heading);}
+        .export-bar{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:24px;}
+        .export-btn{display:inline-flex;align-items:center;gap:8px;padding:10px 20px;border-radius:10px;background:#4f46e5;color:#fff;text-decoration:none;font-size:14px;font-weight:600;}
+        .export-btn.green{background:#16a34a;}
+        .export-btn.orange{background:#ca8a04;}
+        .export-btn.red{background:#dc2626;}
+        table{width:100%;border-collapse:collapse;}
+        th,td{padding:10px 12px;text-align:left;border-bottom:1px solid var(--input-border);font-size:14px;}
+        th{color:var(--text-muted);font-weight:600;}
+        @media(max-width:768px){.report-grid{grid-template-columns:1fr;}}
+    </style>
 </head>
 <body>
-
 <div class="container">
-
     <div th:replace="~{fragments/sidebar :: sidebar}"></div>
-
     <main class="main-content">
-
-        <div class="page-header">
-            <div>
-                <h1>📊 Reports &amp; Analytics</h1>
-                <p>Business insights and apartment performance</p>
-            </div>
-            <button class="primary-btn"><i class="fas fa-download"></i> Export Report</button>
+        <div class="topbar">
+            <div><h1>📈 Reports</h1><p>Overview and downloadable reports</p></div>
         </div>
 
-        <div class="cards">
-            <div class="card"><i class="fas fa-building"></i><h2>120</h2><p>Total Apartments</p></div>
-            <div class="card"><i class="fas fa-users"></i><h2>95</h2><p>Total Tenants</p></div>
-            <div class="card"><i class="fas fa-calendar-check"></i><h2>420</h2><p>Bookings</p></div>
-            <div class="card"><i class="fas fa-indian-rupee-sign"></i><h2>₹8.5L</h2><p>Revenue</p></div>
+        <!-- Export Buttons -->
+        <div class="export-bar">
+            <a href="/export/apartments" class="export-btn"><i class="fas fa-building"></i> Apartments CSV</a>
+            <a href="/export/tenants" class="export-btn green"><i class="fas fa-users"></i> Tenants CSV</a>
+            <a href="/export/billing" class="export-btn orange"><i class="fas fa-file-invoice-dollar"></i> Billing CSV</a>
+            <a href="/export/bookings" class="export-btn red"><i class="fas fa-calendar-check"></i> Bookings CSV</a>
         </div>
 
+        <!-- Charts -->
         <div class="report-grid">
-            <div class="chart-card">
-                <h3>Monthly Revenue</h3>
-                <div class="fake-chart">
-                    <div class="bar" style="height:120px"></div>
-                    <div class="bar" style="height:160px"></div>
-                    <div class="bar" style="height:90px"></div>
-                    <div class="bar" style="height:210px"></div>
-                    <div class="bar" style="height:180px"></div>
-                    <div class="bar" style="height:250px"></div>
-                </div>
+            <div class="report-box">
+                <h3>🏢 Occupancy Overview</h3>
+                <canvas id="occChart" height="220"></canvas>
             </div>
-            <div class="chart-card">
-                <h3>Occupancy Rate</h3>
-                <div class="circle-progress">
-                    <div class="circle"><h2>79%</h2></div>
-                </div>
+            <div class="report-box">
+                <h3>💰 Payment Status</h3>
+                <canvas id="payChart" height="220"></canvas>
             </div>
         </div>
 
-        <div class="table-card">
-            <h3>Top Performing Apartments</h3>
+        <!-- Summary Table -->
+        <div class="report-box" style="margin-bottom:20px;">
+            <h3>📋 Summary</h3>
             <table>
-                <thead><tr><th>Apartment</th><th>Bookings</th><th>Revenue</th><th>Occupancy</th></tr></thead>
-                <tbody>
-                <tr><td>Sky Heights</td><td>82</td><td>₹2.4L</td><td>95%</td></tr>
-                <tr><td>Green Residency</td><td>74</td><td>₹2.0L</td><td>90%</td></tr>
-                <tr><td>Lake View</td><td>68</td><td>₹1.7L</td><td>88%</td></tr>
-                </tbody>
+                <tr><th>Metric</th><th>Value</th></tr>
+                <tr><td>Total Apartments</td><td th:text="${totalApartments}">0</td></tr>
+                <tr><td>Occupied</td><td th:text="${occupiedCount}">0</td></tr>
+                <tr><td>Vacant</td><td th:text="${vacantCount}">0</td></tr>
+                <tr><td>Total Tenants</td><td th:text="${totalTenants}">0</td></tr>
+                <tr><td>Total Revenue Collected</td><td th:text="${'₹' + totalRevenue}">₹0</td></tr>
+                <tr><td>Pending Payments</td><td th:text="${pendingCount}">0</td></tr>
+                <tr><td>Overdue Payments</td><td th:text="${overdueCount}">0</td></tr>
+                <tr><td>Open Complaints</td><td th:text="${openComplaints}">0</td></tr>
             </table>
         </div>
-
     </main>
 </div>
+
+<!-- hidden spans to pass data to JS safely -->
+<span id="dataOcc" th:data-occ="${occupiedCount + ',' + vacantCount + ',' + maintenanceCount}" style="display:none;"></span>
+<span id="dataPay" th:data-pay="${paidCount + ',' + pendingCount + ',' + overdueCount}" style="display:none;"></span>
+
+<script th:inline="javascript">
+    var occRaw = /*[[${occupiedCount + ',' + vacantCount + ',' + maintenanceCount}]]*/ '0,0,0';
+    var payRaw = /*[[${paidCount + ',' + pendingCount + ',' + overdueCount}]]*/ '0,0,0';
+    var occVals = occRaw.toString().split(',').map(Number);
+    var payVals = payRaw.toString().split(',').map(Number);
+
+    new Chart(document.getElementById('occChart'), {
+        type: 'pie',
+        data: {
+            labels: ['Occupied', 'Vacant', 'Maintenance'],
+            datasets: [{ data: occVals, backgroundColor: ['#4f46e5', '#16a34a', '#ca8a04'], borderWidth: 0 }]
+        },
+        options: { plugins: { legend: { position: 'bottom' } } }
+    });
+
+    new Chart(document.getElementById('payChart'), {
+        type: 'pie',
+        data: {
+            labels: ['Paid', 'Pending', 'Overdue'],
+            datasets: [{ data: payVals, backgroundColor: ['#16a34a', '#ca8a04', '#dc2626'], borderWidth: 0 }]
+        },
+        options: { plugins: { legend: { position: 'bottom' } } }
+    });
+</script>
 </body>
 </html>

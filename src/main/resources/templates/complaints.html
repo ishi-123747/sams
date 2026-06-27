@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <script th:src="@{/js/theme.js}"></script>
+    <meta charset="UTF-8">
+    <title>Complaints | SAMS</title>
+    <link rel="stylesheet" th:href="@{/css/sams-global.css}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .modal-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:var(--modal-overlay); z-index:1000; justify-content:center; align-items:center; }
+        .modal-overlay.active { display:flex; }
+        .modal { background:var(--surface-bg); color:var(--text-body); border-radius:12px; padding:30px; width:480px; max-width:90%; max-height:90vh; overflow-y:auto; }
+        .modal h2 { margin-bottom:20px; color:var(--text-heading); }
+        .modal input, .modal select, .modal textarea { width:100%; padding:10px; margin-bottom:12px; border:1px solid var(--input-border); border-radius:8px; font-size:14px; box-sizing:border-box; background:var(--surface-bg); color:var(--text-body); font-family:inherit; }
+        .modal textarea { resize:vertical; min-height:80px; }
+        .modal label { font-size:13px; color:var(--text-label); margin-bottom:4px; display:block; }
+        .modal-btns { display:flex; gap:10px; justify-content:flex-end; margin-top:10px; }
+        .btn-cancel { padding:10px 20px; border:1px solid var(--input-border); border-radius:8px; background:var(--surface-bg); color:var(--text-body); cursor:pointer; }
+        .btn-save { padding:10px 20px; border:none; border-radius:8px; background:#4f46e5; color:#fff; cursor:pointer; }
+        .empty-state { text-align:center; padding:60px 20px; color:var(--text-muted); }
+        .empty-state i { font-size:48px; margin-bottom:15px; display:block; }
+
+        .complaint-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(320px, 1fr)); gap:18px; margin-top:20px; }
+        .complaint-card { background:var(--surface-bg); border-radius:12px; padding:18px 20px; box-shadow:0 1px 3px rgba(0,0,0,0.08); }
+        .complaint-card .c-top { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px; gap:8px; }
+        .complaint-card h3 { font-size:16px; color:var(--text-heading); margin:0; }
+        .complaint-card .c-meta { font-size:12.5px; color:var(--text-muted); margin-bottom:10px; }
+        .complaint-card .c-desc { font-size:13.5px; color:var(--text-body); margin-bottom:12px; line-height:1.5; }
+        .complaint-card .c-footer { display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap; }
+        .complaint-card select.status-select { width:auto; padding:6px 10px; margin:0; font-size:12.5px; border-radius:8px; }
+        .complaint-card .actions { display:flex; gap:6px; }
+
+        .badge.low{background:#dbeafe;color:#1e40af;}
+        .badge.medium{background:#fef9c3;color:#854d0e;}
+        .badge.high{background:#fee2e2;color:#991b1b;}
+        .badge.open{background:#fee2e2;color:#991b1b;}
+        .badge.in-progress{background:#fef9c3;color:#854d0e;}
+        .badge.resolved{background:#dcfce7;color:#166534;}
+    </style>
+</head>
+<body>
+<div class="container">
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+    <main class="main-content">
+        <div class="topbar">
+            <div>
+                <h1>🛠️ Complaints &amp; Maintenance</h1>
+                <p>Track and resolve tenant complaints</p>
+            </div>
+            <button class="add-btn" onclick="openAddModal()"><i class="fas fa-plus"></i> Add Complaint</button>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card"><i class="fas fa-list"></i><div><h2 th:text="${totalCount}">0</h2><p>Total</p></div></div>
+            <div class="stat-card"><i class="fas fa-exclamation-circle"></i><div><h2 th:text="${openCount}">0</h2><p>Open</p></div></div>
+            <div class="stat-card"><i class="fas fa-spinner"></i><div><h2 th:text="${inProgressCount}">0</h2><p>In Progress</p></div></div>
+            <div class="stat-card"><i class="fas fa-check-circle"></i><div><h2 th:text="${resolvedCount}">0</h2><p>Resolved</p></div></div>
+        </div>
+
+        <input type="text" id="searchBox" placeholder="🔍 Search by tenant, apartment or subject..." style="width:100%;padding:12px 16px;margin-top:20px;border:1px solid var(--input-border);border-radius:10px;background:var(--surface-bg);color:var(--text-body);" onkeyup="filterCards()">
+
+        <div class="complaint-grid" id="complaintGrid">
+            <div th:if="${#lists.isEmpty(complaints)}" class="empty-state">
+                <i class="fas fa-clipboard-check"></i>
+                <p>No complaints yet. Click "Add Complaint" to log one.</p>
+            </div>
+
+            <div class="complaint-card" th:each="c : ${complaints}"
+                 th:attr="data-search=${#strings.toLowerCase(c.tenantName + ' ' + c.apartmentNumber + ' ' + c.subject)}">
+                <div class="c-top">
+                    <h3 th:text="${c.subject}">Subject</h3>
+                    <span class="badge" th:classappend="${#strings.toLowerCase(#strings.replace(c.priority,' ','-'))}" th:text="${c.priority}">Priority</span>
+                </div>
+                <div class="c-meta">
+                    <i class="fas fa-user"></i> <span th:text="${c.tenantName}">Tenant</span>
+                    &nbsp;·&nbsp;
+                    <i class="fas fa-door-open"></i> <span th:text="${c.apartmentNumber}">Apt</span>
+                    &nbsp;·&nbsp;
+                    <i class="fas fa-tag"></i> <span th:text="${c.category}">Category</span>
+                    &nbsp;·&nbsp;
+                    <i class="fas fa-calendar"></i> <span th:text="${c.createdDate}">Date</span>
+                </div>
+                <p class="c-desc" th:text="${c.description}">Description text goes here.</p>
+                <div class="c-footer">
+                    <form th:action="@{/complaints/status/{id}(id=${c.id})}" method="post" style="margin:0;">
+                        <select name="status" class="status-select" th:classappend="${#strings.toLowerCase(#strings.replace(c.status,' ','-'))}" onchange="this.form.submit()">
+                            <option value="Open" th:selected="${c.status == 'Open'}">Open</option>
+                            <option value="In Progress" th:selected="${c.status == 'In Progress'}">In Progress</option>
+                            <option value="Resolved" th:selected="${c.status == 'Resolved'}">Resolved</option>
+                        </select>
+                    </form>
+                    <div class="actions">
+                        <button class="btn-edit" th:onclick="'openEditModal(' + ${c.id} + ')'"><i class="fas fa-pen"></i></button>
+                        <form th:action="@{/complaints/delete/{id}(id=${c.id})}" method="post" style="margin:0;" onsubmit="return confirm('Delete this complaint?');">
+                            <button type="submit" class="btn-delete"><i class="fas fa-trash"></i></button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- Add / Edit Modal -->
+<div class="modal-overlay" id="complaintModal">
+    <div class="modal">
+        <h2 id="modalTitle">📝 Add Complaint</h2>
+        <form id="complaintForm" th:action="@{/complaints/add}" method="post">
+            <label>Tenant Name</label>
+            <input type="text" id="cTenant" name="tenantName" required>
+
+            <label>Apartment Number</label>
+            <input type="text" id="cApartment" name="apartmentNumber" required>
+
+            <label>Subject</label>
+            <input type="text" id="cSubject" name="subject" required>
+
+            <label>Description</label>
+            <textarea id="cDescription" name="description"></textarea>
+
+            <label>Category</label>
+            <select id="cCategory" name="category">
+                <option value="Plumbing">Plumbing</option>
+                <option value="Electrical">Electrical</option>
+                <option value="Cleaning">Cleaning</option>
+                <option value="Security">Security</option>
+                <option value="Other">Other</option>
+            </select>
+
+            <label>Priority</label>
+            <select id="cPriority" name="priority">
+                <option value="Low">Low</option>
+                <option value="Medium" selected>Medium</option>
+                <option value="High">High</option>
+            </select>
+
+            <div class="modal-btns">
+                <button type="button" class="btn-cancel" onclick="closeModal()">Cancel</button>
+                <button type="submit" class="btn-save">Save</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script th:inline="javascript">
+    const complaints = /*[[${complaints}]]*/ [];
+
+    function openAddModal() {
+        document.getElementById('modalTitle').textContent = '📝 Add Complaint';
+        const form = document.getElementById('complaintForm');
+        form.setAttribute('action', /*[[@{/complaints/add}]]*/ '/complaints/add');
+        removeHiddenId();
+        document.getElementById('cTenant').value = '';
+        document.getElementById('cApartment').value = '';
+        document.getElementById('cSubject').value = '';
+        document.getElementById('cDescription').value = '';
+        document.getElementById('cCategory').value = 'Plumbing';
+        document.getElementById('cPriority').value = 'Medium';
+        document.getElementById('complaintModal').classList.add('active');
+    }
+
+    function removeHiddenId() {
+        const existing = document.getElementById('cId');
+        if (existing) existing.remove();
+    }
+
+    function setHiddenId(id) {
+        removeHiddenId();
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.id = 'cId';
+        input.name = 'id';
+        input.value = id;
+        document.getElementById('complaintForm').appendChild(input);
+    }
+
+    function openEditModal(id) {
+        const c = complaints.find(x => x.id === id);
+        if (!c) return;
+        document.getElementById('modalTitle').textContent = '✏️ Edit Complaint';
+        const form = document.getElementById('complaintForm');
+        form.setAttribute('action', /*[[@{/complaints/edit}]]*/ '/complaints/edit');
+        setHiddenId(c.id);
+        document.getElementById('cTenant').value = c.tenantName || '';
+        document.getElementById('cApartment').value = c.apartmentNumber || '';
+        document.getElementById('cSubject').value = c.subject || '';
+        document.getElementById('cDescription').value = c.description || '';
+        document.getElementById('cCategory').value = c.category || 'Plumbing';
+        document.getElementById('cPriority').value = c.priority || 'Medium';
+        document.getElementById('complaintModal').classList.add('active');
+    }
+
+    function closeModal() {
+        document.getElementById('complaintModal').classList.remove('active');
+    }
+
+    function filterCards() {
+        const term = document.getElementById('searchBox').value.toLowerCase();
+        document.querySelectorAll('#complaintGrid .complaint-card').forEach(card => {
+            const haystack = card.getAttribute('data-search') || '';
+            card.style.display = haystack.includes(term) ? '' : 'none';
+        });
+    }
+</script>
+</body>
+</html>
