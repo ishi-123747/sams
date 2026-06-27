@@ -6,6 +6,7 @@
     <title>Apartments | SAMS</title>
     <link rel="stylesheet" th:href="@{/css/sams-global.css}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         .modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:var(--modal-overlay);z-index:1000;justify-content:center;align-items:center;}
         .modal-overlay.active{display:flex;}
@@ -20,6 +21,12 @@
         .empty-state i{font-size:48px;margin-bottom:15px;display:block;}
         .apt-photo{width:100%;height:160px;object-fit:cover;border-radius:10px;margin-bottom:10px;}
         .export-btn{display:inline-flex;align-items:center;gap:8px;padding:10px 18px;border-radius:10px;background:#16a34a;color:#fff;text-decoration:none;font-size:14px;font-weight:600;}
+        .qr-btn{background:#ede9fe;color:#4f46e5;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;}
+        .qr-modal{background:var(--surface-bg);border-radius:16px;padding:30px;text-align:center;width:300px;}
+        .qr-modal h3{margin:0 0 16px;color:var(--text-heading);}
+        .qr-modal p{color:var(--text-muted);font-size:13px;margin:12px 0 0;}
+        .qr-container{display:flex;justify-content:center;margin:16px 0;}
+        .download-qr{margin-top:16px;padding:10px 20px;background:#4f46e5;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600;width:100%;}
     </style>
 </head>
 <body>
@@ -63,6 +70,11 @@
                     <span th:text="${a.rent > 0 ? '₹' + a.rent + '/mo' : '—'}">—</span></p>
                 <p><i class="fas fa-user"></i> <span th:text="${a.tenantName != null ? a.tenantName : '—'}">—</span></p>
                 <div class="actions">
+                    <button class="qr-btn"
+                            th:attr="data-id=${a.id},data-number=${a.apartmentNumber},data-name=${a.apartmentName},data-location=${a.location},data-rent=${a.rent}"
+                            onclick="showQRFromBtn(this)">
+                        <i class="fas fa-qrcode"></i> QR
+                    </button>
                     <button class="btn-edit" th:onclick="'openEditModal(' + ${a.id} + ')'"><i class="fas fa-pen"></i></button>
                     <form th:action="@{/apartments/delete/{id}(id=${a.id})}" method="post" style="margin:0;" onsubmit="return confirm('Delete this apartment?');">
                         <button type="submit" class="btn-delete"><i class="fas fa-trash"></i></button>
@@ -71,6 +83,20 @@
             </div>
         </div>
     </main>
+</div>
+
+<!-- QR Modal -->
+<div class="modal-overlay" id="qrModal">
+    <div class="qr-modal">
+        <h3>📱 Apartment QR Code</h3>
+        <div id="qrAptInfo" style="font-size:14px;color:var(--text-muted);margin-bottom:8px;"></div>
+        <div class="qr-container">
+            <div id="qrcode"></div>
+        </div>
+        <p>Scan to view apartment details</p>
+        <button class="download-qr" onclick="downloadQR()"><i class="fas fa-download"></i> Download QR Code</button>
+        <button class="btn-cancel" style="width:100%;margin-top:8px;" onclick="closeQR()">Close</button>
+    </div>
 </div>
 
 <!-- Add Modal -->
@@ -132,8 +158,11 @@
 
 <script th:inline="javascript">
     const apartments = /*[[${apartments}]]*/ [];
+    let currentQR = null;
+
     function openAddModal(){document.getElementById('addModal').classList.add('active');}
     function closeAddModal(){document.getElementById('addModal').classList.remove('active');}
+
     function openEditModal(id){
         const a=apartments.find(x=>x.id===id); if(!a)return;
         document.getElementById('editId').value=a.id;
@@ -148,6 +177,48 @@
         document.getElementById('editModal').classList.add('active');
     }
     function closeEditModal(){document.getElementById('editModal').classList.remove('active');}
+
+    function showQRFromBtn(btn) {
+        const id = btn.getAttribute('data-id');
+        const number = btn.getAttribute('data-number');
+        const name = btn.getAttribute('data-name');
+        const location = btn.getAttribute('data-location');
+        const rent = btn.getAttribute('data-rent');
+        showQR(id, number, name, location, rent);
+    }
+
+    function showQR(id, number, name, location, rent) {
+        document.getElementById('qrAptInfo').innerHTML =
+            '<strong>' + number + ' – ' + name + '</strong><br>' + location + ' | ₹' + rent + '/mo';
+        const qrDiv = document.getElementById('qrcode');
+        qrDiv.innerHTML = '';
+        const qrText = 'Apartment: ' + number + '\nName: ' + name + '\nLocation: ' + location + '\nRent: Rs.' + rent + '/month\nManaged by SAMS';
+        currentQR = new QRCode(qrDiv, {
+            text: qrText,
+            width: 180,
+            height: 180,
+            colorDark: '#4f46e5',
+            colorLight: '#ffffff',
+            correctLevel: QRCode.CorrectLevel.H
+        });
+        document.getElementById('qrModal').classList.add('active');
+    }
+
+    function closeQR() {
+        document.getElementById('qrModal').classList.remove('active');
+        document.getElementById('qrcode').innerHTML = '';
+        currentQR = null;
+    }
+
+    function downloadQR() {
+        const canvas = document.querySelector('#qrcode canvas');
+        if (!canvas) return;
+        const link = document.createElement('a');
+        link.download = 'apartment-qr.png';
+        link.href = canvas.toDataURL();
+        link.click();
+    }
+
     function filterCards(){
         const term=document.getElementById('searchInput').value.toLowerCase();
         document.querySelectorAll('#apartmentGrid .apartment-card').forEach(c=>{
