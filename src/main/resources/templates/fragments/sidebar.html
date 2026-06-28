@@ -9,128 +9,158 @@
         </button>
     </div>
     <ul>
+
+        <!-- ============ ADMIN MENU ============ -->
         <th:block th:if="${session.role == 'ADMIN'}">
-            <li th:classappend="${activePage == 'dashboard'} ? 'active'">
+
+            <!-- Overview -->
+            <li th:classappend="${activePage == 'dashboard'} ? 'sidebar-active'">
                 <a th:href="@{/dashboard}"><i class="fas fa-chart-line"></i> Dashboard</a>
             </li>
-            <li th:classappend="${activePage == 'apartments'} ? 'active'">
+
+            <!-- People & Property -->
+            <li th:classappend="${activePage == 'apartments'} ? 'sidebar-active'">
                 <a th:href="@{/apartments}"><i class="fas fa-building"></i> Apartments</a>
             </li>
-            <li th:classappend="${activePage == 'tenants'} ? 'active'">
+            <li th:classappend="${activePage == 'tenants'} ? 'sidebar-active'">
                 <a th:href="@{/tenants}"><i class="fas fa-users"></i> Tenants</a>
             </li>
-            <li th:classappend="${activePage == 'bookings'} ? 'active'">
-                <a th:href="@{/bookings}"><i class="fas fa-calendar-check"></i> Bookings</a>
-            </li>
-            <li th:classappend="${activePage == 'billing'} ? 'active'">
-                <a th:href="@{/billing}"><i class="fas fa-file-invoice-dollar"></i> Billing</a>
-            </li>
-            <li th:classappend="${activePage == 'complaints'} ? 'active'">
-                <a th:href="@{/complaints}"><i class="fas fa-tools"></i> Complaints</a>
-            </li>
-            <li th:classappend="${activePage == 'feedback'} ? 'active'">
-                <a th:href="@{/feedback}"><i class="fas fa-star"></i> Feedback</a>
-            </li>
-            <li th:classappend="${activePage == 'amenities-admin'} ? 'active'">
-                <a th:href="@{/amenities}"><i class="fas fa-swimming-pool"></i> Amenities</a>
-            </li>
-            <li th:classappend="${activePage == 'documents-admin'} ? 'active'">
-                <a th:href="@{/documents}"><i class="fas fa-folder"></i> Documents</a>
-            </li>
-            <li th:classappend="${activePage == 'parking-admin'} ? 'active'">
-                <a th:href="@{/parking}"><i class="fas fa-parking"></i> Parking</a>
-            </li>
-            <li th:classappend="${activePage == 'emergency-admin'} ? 'active'">
-                <a th:href="@{/emergency-contacts}"><i class="fas fa-phone-alt"></i> Emergency</a>
-            </li>
-            <li th:classappend="${activePage == 'lostfound-admin'} ? 'active'">
-                <a th:href="@{/lost-found}"><i class="fas fa-search"></i> Lost & Found</a>
-            </li>
-            <li th:classappend="${activePage == 'maintenance'} ? 'active'">
-                <a th:href="@{/maintenance}"><i class="fas fa-wrench"></i> Maintenance</a>
-            </li>
-            <li th:classappend="${activePage == 'leases'} ? 'active'">
+            <li th:classappend="${activePage == 'leases'} ? 'sidebar-active'">
                 <a th:href="@{/leases}"><i class="fas fa-file-contract"></i> Leases</a>
             </li>
-            <li th:classappend="${activePage == 'calendar'} ? 'active'">
+            <li th:classappend="${activePage == 'calendar'} ? 'sidebar-active'">
                 <a th:href="@{/vacancy-calendar}"><i class="fas fa-calendar-alt"></i> Vacancy Calendar</a>
             </li>
-            <li th:classappend="${activePage == 'notifications'} ? 'active'">
-                <a th:href="@{/notifications}"><i class="fas fa-bell"></i> Notifications</a>
+            <li th:classappend="${activePage == 'staff-page'} ? 'sidebar-active'">
+                <a th:href="@{/staff}"><i class="fas fa-hard-hat"></i> Staff</a>
             </li>
-            <li th:classappend="${activePage == 'reports'} ? 'active'">
-                <a th:href="@{/reports}"><i class="fas fa-chart-pie"></i> Reports</a>
-            </li>
-            <li th:classappend="${activePage == 'audit'} ? 'active'">
-                <a th:href="@{/audit-log}"><i class="fas fa-history"></i> Audit Log</a>
-            </li>
-            <li th:classappend="${activePage == 'settings'} ? 'active'">
-                <a th:href="@{/settings}"><i class="fas fa-cog"></i> Settings</a>
-            </li>
-            <li>
-                <a th:href="@{/logout}"><i class="fas fa-sign-out-alt"></i> Logout</a>
-            </li>
-        </th:block>
 
-        <th:block th:if="${session.role == 'TENANT'}">
-            <li th:classappend="${activePage == 'portal'} ? 'active'">
-                <a th:href="@{/my-portal}"><i class="fas fa-user-circle"></i> My Portal</a>
-            </li>
-            <li th:classappend="${activePage == 'bookings'} ? 'active'">
-                <a th:href="@{/my-bookings}"><i class="fas fa-calendar-check"></i> My Bookings</a>
-            </li>
-            <li th:classappend="${activePage == 'billing'} ? 'active'">
-                <a th:href="@{/my-bills}"><i class="fas fa-file-invoice-dollar"></i> My Bills</a>
-            </li>
-            <li th:classappend="${activePage == 'complaints'} ? 'active'">
-                <a th:href="@{/my-complaints}"><i class="fas fa-tools"></i> My Complaints</a>
-            </li>
-            <li th:classappend="${activePage == 'feedback'} ? 'active'">
-                <a th:href="@{/my-feedback}"><i class="fas fa-star"></i> My Feedback</a>
-            </li>
-            <li th:classappend="${activePage == 'amenities-tenant'} ? 'active'">
-                <a th:href="@{/my-amenities}"><i class="fas fa-swimming-pool"></i> Book Amenity</a>
-            </li>
-            <li th:classappend="${activePage == 'documents-tenant'} ? 'active'">
-                <a th:href="@{/my-documents}"><i class="fas fa-folder"></i> My Documents</a>
-            </li>
-            <li th:classappend="${activePage == 'emergency-tenant'} ? 'active'">
-                <a th:href="@{/emergency-contacts}"><i class="fas fa-phone-alt"></i> Emergency</a>
-            </li>
-            <li th:classappend="${activePage == 'lostfound-tenant'} ? 'active'">
-                <a th:href="@{/lost-found}"><i class="fas fa-search"></i> Lost & Found</a>
-            </li>
-            <li>
-                <a th:href="@{/logout}"><i class="fas fa-sign-out-alt"></i> Logout</a>
-            </li>
-        </th:block>
-
-        <th:block th:if="${session.role == null}">
-            <li th:classappend="${activePage == 'dashboard'} ? 'active'">
-                <a th:href="@{/dashboard}"><i class="fas fa-chart-line"></i> Dashboard</a>
-            </li>
-            <li th:classappend="${activePage == 'apartments'} ? 'active'">
-                <a th:href="@{/apartments}"><i class="fas fa-building"></i> Apartments</a>
-            </li>
-            <li th:classappend="${activePage == 'tenants'} ? 'active'">
-                <a th:href="@{/tenants}"><i class="fas fa-users"></i> Tenants</a>
-            </li>
-            <li th:classappend="${activePage == 'bookings'} ? 'active'">
-                <a th:href="@{/bookings}"><i class="fas fa-calendar-check"></i> Bookings</a>
-            </li>
-            <li th:classappend="${activePage == 'billing'} ? 'active'">
+            <!-- Money -->
+            <li th:classappend="${activePage == 'billing'} ? 'sidebar-active'">
                 <a th:href="@{/billing}"><i class="fas fa-file-invoice-dollar"></i> Billing</a>
             </li>
-            <li th:classappend="${activePage == 'complaints'} ? 'active'">
+            <li th:classappend="${activePage == 'bookings'} ? 'sidebar-active'">
+                <a th:href="@{/bookings}"><i class="fas fa-calendar-check"></i> Bookings</a>
+            </li>
+
+            <!-- Operations -->
+            <li th:classappend="${activePage == 'complaints'} ? 'sidebar-active'">
                 <a th:href="@{/complaints}"><i class="fas fa-tools"></i> Complaints</a>
             </li>
-            <li th:classappend="${activePage == 'settings'} ? 'active'">
+            <li th:classappend="${activePage == 'maintenance'} ? 'sidebar-active'">
+                <a th:href="@{/maintenance}"><i class="fas fa-wrench"></i> Maintenance</a>
+            </li>
+            <li th:classappend="${activePage == 'parking-admin'} ? 'sidebar-active'">
+                <a th:href="@{/parking}"><i class="fas fa-parking"></i> Parking</a>
+            </li>
+            <li th:classappend="${activePage == 'amenities-admin'} ? 'sidebar-active'">
+                <a th:href="@{/amenities}"><i class="fas fa-swimming-pool"></i> Amenities</a>
+            </li>
+
+            <!-- Community -->
+            <li th:classappend="${activePage == 'feedback'} ? 'sidebar-active'">
+                <a th:href="@{/feedback}"><i class="fas fa-star"></i> Feedback</a>
+            </li>
+            <li th:classappend="${activePage == 'lostfound-admin'} ? 'sidebar-active'">
+                <a th:href="@{/lost-found}"><i class="fas fa-search"></i> Lost &amp; Found</a>
+            </li>
+            <li th:classappend="${activePage == 'emergency-admin'} ? 'sidebar-active'">
+                <a th:href="@{/emergency-contacts}"><i class="fas fa-phone-alt"></i> Emergency</a>
+            </li>
+            <li th:classappend="${activePage == 'documents-admin'} ? 'sidebar-active'">
+                <a th:href="@{/documents}"><i class="fas fa-folder"></i> Documents</a>
+            </li>
+
+            <!-- Admin Tools -->
+            <li th:classappend="${activePage == 'notifications'} ? 'sidebar-active'">
+                <a th:href="@{/notifications}"><i class="fas fa-bell"></i> Notifications</a>
+            </li>
+            <li th:classappend="${activePage == 'reports'} ? 'sidebar-active'">
+                <a th:href="@{/reports}"><i class="fas fa-chart-pie"></i> Reports</a>
+            </li>
+            <li th:classappend="${activePage == 'audit'} ? 'sidebar-active'">
+                <a th:href="@{/audit-log}"><i class="fas fa-history"></i> Audit Log</a>
+            </li>
+            <li th:classappend="${activePage == 'settings'} ? 'sidebar-active'">
                 <a th:href="@{/settings}"><i class="fas fa-cog"></i> Settings</a>
             </li>
-            <li>
+
+            <li class="logout-item">
                 <a th:href="@{/logout}"><i class="fas fa-sign-out-alt"></i> Logout</a>
             </li>
         </th:block>
+
+        <!-- ============ TENANT MENU ============ -->
+        <th:block th:if="${session.role == 'TENANT'}">
+
+            <!-- Overview -->
+            <li th:classappend="${activePage == 'portal'} ? 'sidebar-active'">
+                <a th:href="@{/my-portal}"><i class="fas fa-user-circle"></i> My Portal</a>
+            </li>
+
+            <!-- Money -->
+            <li th:classappend="${activePage == 'billing'} ? 'sidebar-active'">
+                <a th:href="@{/my-bills}"><i class="fas fa-file-invoice-dollar"></i> My Bills</a>
+            </li>
+            <li th:classappend="${activePage == 'bookings'} ? 'sidebar-active'">
+                <a th:href="@{/my-bookings}"><i class="fas fa-calendar-check"></i> My Bookings</a>
+            </li>
+
+            <!-- Operations -->
+            <li th:classappend="${activePage == 'complaints'} ? 'sidebar-active'">
+                <a th:href="@{/my-complaints}"><i class="fas fa-tools"></i> My Complaints</a>
+            </li>
+            <li th:classappend="${activePage == 'amenities-tenant'} ? 'sidebar-active'">
+                <a th:href="@{/my-amenities}"><i class="fas fa-swimming-pool"></i> Book Amenity</a>
+            </li>
+
+            <!-- Community -->
+            <li th:classappend="${activePage == 'feedback'} ? 'sidebar-active'">
+                <a th:href="@{/my-feedback}"><i class="fas fa-star"></i> My Feedback</a>
+            </li>
+            <li th:classappend="${activePage == 'lostfound-tenant'} ? 'sidebar-active'">
+                <a th:href="@{/lost-found}"><i class="fas fa-search"></i> Lost &amp; Found</a>
+            </li>
+            <li th:classappend="${activePage == 'emergency-tenant'} ? 'sidebar-active'">
+                <a th:href="@{/emergency-contacts}"><i class="fas fa-phone-alt"></i> Emergency</a>
+            </li>
+            <li th:classappend="${activePage == 'documents-tenant'} ? 'sidebar-active'">
+                <a th:href="@{/my-documents}"><i class="fas fa-folder"></i> My Documents</a>
+            </li>
+
+            <li class="logout-item">
+                <a th:href="@{/logout}"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            </li>
+        </th:block>
+
+        <!-- ============ FALLBACK / NO ROLE ============ -->
+        <th:block th:if="${session.role == null}">
+            <li th:classappend="${activePage == 'dashboard'} ? 'sidebar-active'">
+                <a th:href="@{/dashboard}"><i class="fas fa-chart-line"></i> Dashboard</a>
+            </li>
+            <li th:classappend="${activePage == 'apartments'} ? 'sidebar-active'">
+                <a th:href="@{/apartments}"><i class="fas fa-building"></i> Apartments</a>
+            </li>
+            <li th:classappend="${activePage == 'tenants'} ? 'sidebar-active'">
+                <a th:href="@{/tenants}"><i class="fas fa-users"></i> Tenants</a>
+            </li>
+            <li th:classappend="${activePage == 'bookings'} ? 'sidebar-active'">
+                <a th:href="@{/bookings}"><i class="fas fa-calendar-check"></i> Bookings</a>
+            </li>
+            <li th:classappend="${activePage == 'billing'} ? 'sidebar-active'">
+                <a th:href="@{/billing}"><i class="fas fa-file-invoice-dollar"></i> Billing</a>
+            </li>
+            <li th:classappend="${activePage == 'complaints'} ? 'sidebar-active'">
+                <a th:href="@{/complaints}"><i class="fas fa-tools"></i> Complaints</a>
+            </li>
+            <li th:classappend="${activePage == 'settings'} ? 'sidebar-active'">
+                <a th:href="@{/settings}"><i class="fas fa-cog"></i> Settings</a>
+            </li>
+            <li class="logout-item">
+                <a th:href="@{/logout}"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            </li>
+        </th:block>
+
     </ul>
 </div>
 </body>

@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <script th:src="@{/js/theme.js}"></script>
+    <meta charset="UTF-8">
+    <title>Staff | SAMS</title>
+    <link rel="stylesheet" th:href="@{/css/sams-global.css}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:var(--modal-overlay);z-index:1000;justify-content:center;align-items:center;}
+        .modal-overlay.active{display:flex;}
+        .modal{background:var(--surface-bg);color:var(--text-body);border-radius:12px;padding:30px;width:460px;max-width:90%;max-height:90vh;overflow-y:auto;}
+        .modal h2{margin-bottom:20px;color:var(--text-heading);}
+        .modal input,.modal select{width:100%;padding:10px;margin-bottom:12px;border:1px solid var(--input-border);border-radius:8px;font-size:14px;box-sizing:border-box;background:var(--surface-bg);color:var(--text-body);}
+        .modal label{font-size:12px;color:var(--text-muted);margin-bottom:4px;display:block;}
+        .modal-btns{display:flex;gap:10px;justify-content:flex-end;margin-top:10px;}
+        .btn-cancel{padding:10px 20px;border:1px solid var(--input-border);border-radius:8px;background:var(--surface-bg);color:var(--text-body);cursor:pointer;}
+        .btn-save{padding:10px 20px;border:none;border-radius:8px;background:#4f46e5;color:#fff;cursor:pointer;}
+        .staff-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;margin-top:20px;}
+        .staff-card{background:var(--surface-bg);border-radius:14px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,0.08);display:flex;flex-direction:column;gap:6px;}
+        .staff-top{display:flex;align-items:center;gap:14px;margin-bottom:8px;}
+        .staff-avatar{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;color:#fff;flex-shrink:0;}
+        .avatar-blue{background:linear-gradient(135deg,#4f46e5,#7c3aed);}
+        .avatar-green{background:linear-gradient(135deg,#16a34a,#15803d);}
+        .avatar-orange{background:linear-gradient(135deg,#ea580c,#dc2626);}
+        .avatar-teal{background:linear-gradient(135deg,#0d9488,#0891b2);}
+        .staff-name{font-size:15px;font-weight:700;color:var(--text-heading);}
+        .role-badge{font-size:11px;font-weight:600;padding:2px 10px;border-radius:12px;display:inline-block;margin-top:2px;}
+        .watchman{background:#dbeafe;color:#1d4ed8;}
+        .cleaner{background:#dcfce7;color:#15803d;}
+        .electrician{background:#fef9c3;color:#92400e;}
+        .plumber{background:#f3e8ff;color:#7c3aed;}
+        .gardener{background:#ccfbf1;color:#0f766e;}
+        .driver{background:#fee2e2;color:#b91c1c;}
+        .other{background:#f3f4f6;color:#4b5563;}
+        .staff-info{font-size:13px;color:var(--text-muted);display:flex;flex-direction:column;gap:4px;}
+        .staff-info span{display:flex;align-items:center;gap:6px;}
+        .badge{padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600;}
+        .active{background:#dcfce7;color:#16a34a;}
+        .inactive{background:#fee2e2;color:#dc2626;}
+        .staff-actions{display:flex;gap:8px;margin-top:10px;}
+        .btn-edit-sm{background:#ede9fe;color:#4f46e5;border:none;padding:7px 14px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;}
+        .btn-del-sm{background:#fee2e2;color:#dc2626;border:none;padding:7px 12px;border-radius:8px;cursor:pointer;font-size:12px;}
+        .search-box{display:flex;gap:10px;margin-bottom:20px;}
+        .search-box input{flex:1;padding:10px 16px;border:1px solid var(--input-border);border-radius:10px;font-size:14px;background:var(--surface-bg);color:var(--text-body);}
+        .shift-badge{font-size:11px;padding:2px 8px;border-radius:10px;background:#f3f4f6;color:#4b5563;}
+    </style>
+</head>
+<body>
+<div class="container">
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+    <main class="main-content">
+        <div class="topbar">
+            <div>
+                <h1>👷 Staff Management</h1>
+                <p>Manage building staff — watchmen, cleaners, and more</p>
+            </div>
+            <button class="add-btn" onclick="document.getElementById('addModal').classList.add('active')">
+                <i class="fas fa-user-plus"></i> Add Staff
+            </button>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card"><i class="fas fa-users"></i><div><h2 th:text="${totalCount}">0</h2><p>Total Staff</p></div></div>
+            <div class="stat-card"><i class="fas fa-check-circle"></i><div><h2 th:text="${activeCount}">0</h2><p>Active</p></div></div>
+            <div class="stat-card"><i class="fas fa-shield-alt"></i><div><h2 th:text="${watchmanCount}">0</h2><p>Watchmen</p></div></div>
+            <div class="stat-card"><i class="fas fa-broom"></i><div><h2 th:text="${cleanerCount}">0</h2><p>Cleaners</p></div></div>
+        </div>
+
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="Search by name, role or shift..." oninput="filterStaff()">
+        </div>
+
+        <div th:if="${#lists.isEmpty(staffList)}" style="text-align:center;padding:60px;color:var(--text-muted);">
+            <i class="fas fa-hard-hat" style="font-size:48px;display:block;margin-bottom:16px;opacity:0.2;"></i>
+            No staff added yet. Click <strong>Add Staff</strong> to get started.
+        </div>
+
+        <div class="staff-grid" id="staffGrid">
+            <div class="staff-card" th:each="s : ${staffList}"
+                 th:attr="data-search=${#strings.toLowerCase(s.name + ' ' + s.role + ' ' + (s.shift != null ? s.shift : ''))}">
+                <div class="staff-top">
+                    <div class="staff-avatar"
+                         th:classappend="${s.role == 'Watchman'} ? 'avatar-blue' : (${s.role == 'Cleaner'} ? 'avatar-green' : (${s.role == 'Electrician'} ? 'avatar-orange' : 'avatar-teal'))"
+                         th:text="${#strings.substring(s.name, 0, 1)}">S</div>
+                    <div>
+                        <div class="staff-name" th:text="${s.name}">—</div>
+                        <span class="role-badge"
+                              th:classappend="${#strings.toLowerCase(s.role)}"
+                              th:text="${s.role}">—</span>
+                        <span class="badge" th:classappend="${#strings.toLowerCase(s.status)}"
+                              th:text="${s.status}" style="margin-left:6px;">—</span>
+                    </div>
+                </div>
+                <div class="staff-info">
+                    <span><i class="fas fa-phone"></i> <span th:text="${s.phone != null ? s.phone : '—'}">—</span></span>
+                    <span th:if="${s.email != null and !#strings.isEmpty(s.email)}">
+                        <i class="fas fa-envelope"></i> <span th:text="${s.email}">—</span>
+                    </span>
+                    <span th:if="${s.shift != null and !#strings.isEmpty(s.shift)}">
+                        <i class="fas fa-clock"></i>
+                        <span class="shift-badge" th:text="${s.shift}">—</span>
+                    </span>
+                    <span th:if="${s.salary != null and !#strings.isEmpty(s.salary)}">
+                        <i class="fas fa-rupee-sign"></i> <span th:text="'₹' + ${s.salary} + '/month'">—</span>
+                    </span>
+                    <span th:if="${s.joiningDate != null and !#strings.isEmpty(s.joiningDate)}">
+                        <i class="fas fa-calendar"></i> Joined: <span th:text="${s.joiningDate}">—</span>
+                    </span>
+                    <span th:if="${s.address != null and !#strings.isEmpty(s.address)}">
+                        <i class="fas fa-map-marker-alt"></i> <span th:text="${s.address}">—</span>
+                    </span>
+                </div>
+                <div class="staff-actions">
+                    <button class="btn-edit-sm"
+                            th:attr="data-id=${s.id},data-name=${s.name},data-role=${s.role},data-phone=${s.phone},data-email=${s.email},data-shift=${s.shift},data-joining=${s.joiningDate},data-status=${s.status},data-salary=${s.salary},data-aadhar=${s.aadhar},data-address=${s.address}"
+                            onclick="openEdit(this)">
+                        <i class="fas fa-pen"></i> Edit
+                    </button>
+                    <form th:action="@{/staff/delete/{id}(id=${s.id})}" method="post" style="display:inline;" onsubmit="return confirm('Delete this staff member?')">
+                        <button type="submit" class="btn-del-sm"><i class="fas fa-trash"></i></button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- Add Modal -->
+<div class="modal-overlay" id="addModal">
+    <div class="modal">
+        <h2>👷 Add Staff Member</h2>
+        <form th:action="@{/staff/add}" method="post">
+            <input type="text" name="name" placeholder="Full Name" required>
+            <select name="role" required>
+                <option value="">-- Role --</option>
+                <option value="Watchman">🛡️ Watchman / Security</option>
+                <option value="Cleaner">🧹 Cleaner / Housekeeping</option>
+                <option value="Electrician">⚡ Electrician</option>
+                <option value="Plumber">🔧 Plumber</option>
+                <option value="Gardener">🌿 Gardener</option>
+                <option value="Driver">🚗 Driver</option>
+                <option value="Other">Other</option>
+            </select>
+            <input type="tel" name="phone" placeholder="Phone Number" required>
+            <input type="email" name="email" placeholder="Email (optional)">
+            <select name="shift">
+                <option value="">-- Shift --</option>
+                <option value="Morning (6AM–2PM)">Morning (6AM–2PM)</option>
+                <option value="Afternoon (2PM–10PM)">Afternoon (2PM–10PM)</option>
+                <option value="Night (10PM–6AM)">Night (10PM–6AM)</option>
+                <option value="Full Day">Full Day</option>
+            </select>
+            <input type="text" name="salary" placeholder="Monthly Salary (₹)">
+            <input type="text" name="aadhar" placeholder="Aadhar Number">
+            <input type="text" name="address" placeholder="Address">
+            <label>Date of Joining</label>
+            <input type="date" name="joiningDate">
+            <select name="status">
+                <option value="Active">Active</option>
+                <option value="Inactive">Inactive</option>
+            </select>
+            <div class="modal-btns">
+                <button type="button" class="btn-cancel" onclick="document.getElementById('addModal').classList.remove('active')">Cancel</button>
+                <button type="submit" class="btn-save">Save</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Edit Modal -->
+<div class="modal-overlay" id="editModal">
+    <div class="modal">
+        <h2>✏️ Edit Staff Member</h2>
+        <form th:action="@{/staff/edit}" method="post">
+            <input type="hidden" id="eId" name="id">
+            <input type="text" id="eName" name="name" placeholder="Full Name" required>
+            <select id="eRole" name="role" required>
+                <option value="">-- Role --</option>
+                <option value="Watchman">🛡️ Watchman / Security</option>
+                <option value="Cleaner">🧹 Cleaner / Housekeeping</option>
+                <option value="Electrician">⚡ Electrician</option>
+                <option value="Plumber">🔧 Plumber</option>
+                <option value="Gardener">🌿 Gardener</option>
+                <option value="Driver">🚗 Driver</option>
+                <option value="Other">Other</option>
+            </select>
+            <input type="tel" id="ePhone" name="phone" placeholder="Phone Number" required>
+            <input type="email" id="eEmail" name="email" placeholder="Email (optional)">
+            <select id="eShift" name="shift">
+                <option value="">-- Shift --</option>
+                <option value="Morning (6AM–2PM)">Morning (6AM–2PM)</option>
+                <option value="Afternoon (2PM–10PM)">Afternoon (2PM–10PM)</option>
+                <option value="Night (10PM–6AM)">Night (10PM–6AM)</option>
+                <option value="Full Day">Full Day</option>
+            </select>
+            <input type="text" id="eSalary" name="salary" placeholder="Monthly Salary (₹)">
+            <input type="text" id="eAadhar" name="aadhar" placeholder="Aadhar Number">
+            <input type="text" id="eAddress" name="address" placeholder="Address">
+            <label>Date of Joining</label>
+            <input type="date" id="eJoining" name="joiningDate">
+            <select id="eStatus" name="status">
+                <option value="Active">Active</option>
+                <option value="Inactive">Inactive</option>
+            </select>
+            <div class="modal-btns">
+                <button type="button" class="btn-cancel" onclick="document.getElementById('editModal').classList.remove('active')">Cancel</button>
+                <button type="submit" class="btn-save">Save</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function openEdit(btn) {
+        document.getElementById('eId').value = btn.getAttribute('data-id');
+        document.getElementById('eName').value = btn.getAttribute('data-name') || '';
+        document.getElementById('eRole').value = btn.getAttribute('data-role') || '';
+        document.getElementById('ePhone').value = btn.getAttribute('data-phone') || '';
+        document.getElementById('eEmail').value = btn.getAttribute('data-email') || '';
+        document.getElementById('eShift').value = btn.getAttribute('data-shift') || '';
+        document.getElementById('eSalary').value = btn.getAttribute('data-salary') || '';
+        document.getElementById('eAadhar').value = btn.getAttribute('data-aadhar') || '';
+        document.getElementById('eAddress').value = btn.getAttribute('data-address') || '';
+        document.getElementById('eJoining').value = btn.getAttribute('data-joining') || '';
+        document.getElementById('eStatus').value = btn.getAttribute('data-status') || 'Active';
+        document.getElementById('editModal').classList.add('active');
+    }
+
+    function filterStaff() {
+        const term = document.getElementById('searchInput').value.toLowerCase();
+        document.querySelectorAll('#staffGrid .staff-card').forEach(c => {
+            c.style.display = (c.getAttribute('data-search') || '').includes(term) ? '' : 'none';
+        });
+    }
+</script>
+</body>
+</html>
