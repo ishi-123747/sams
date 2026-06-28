@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <script th:src="@{/js/theme.js}"></script>
+    <meta charset="UTF-8">
+    <title>Deposit Tracker | SAMS</title>
+    <link rel="stylesheet" th:href="@{/css/sams-global.css}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:var(--modal-overlay);z-index:1000;justify-content:center;align-items:center;}
+        .modal-overlay.active{display:flex;}
+        .modal{background:var(--surface-bg);color:var(--text-body);border-radius:12px;padding:30px;width:460px;max-width:90%;max-height:90vh;overflow-y:auto;}
+        .modal h2{margin-bottom:20px;color:var(--text-heading);}
+        .modal input,.modal textarea{width:100%;padding:10px;margin-bottom:12px;border:1px solid var(--input-border);border-radius:8px;font-size:14px;box-sizing:border-box;background:var(--surface-bg);color:var(--text-body);}
+        .modal textarea{height:70px;resize:vertical;}
+        .modal-btns{display:flex;gap:10px;justify-content:flex-end;margin-top:10px;}
+        .btn-cancel{padding:10px 20px;border:1px solid var(--input-border);border-radius:8px;background:var(--surface-bg);color:var(--text-body);cursor:pointer;}
+        .btn-save{padding:10px 20px;border:none;border-radius:8px;background:#4f46e5;color:#fff;cursor:pointer;}
+        .deposit-card{background:var(--surface-bg);border-radius:14px;padding:22px;box-shadow:0 2px 8px rgba(0,0,0,0.08);margin-bottom:16px;}
+        .deposit-top{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;}
+        .deposit-name{font-size:16px;font-weight:700;color:var(--text-heading);}
+        .deposit-apt{font-size:12px;color:var(--text-muted);}
+        .badge{padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;}
+        .active{background:#dbeafe;color:#1d4ed8;}
+        .movedout{background:#fef9c3;color:#ca8a04;}
+        .refunded{background:#dcfce7;color:#16a34a;}
+        .deposit-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-top:14px;}
+        .deposit-stat{background:var(--input-bg, #f9fafb);border-radius:10px;padding:12px;}
+        .deposit-stat label{font-size:11px;color:var(--text-muted);display:block;margin-bottom:4px;}
+        .deposit-stat span{font-size:15px;font-weight:700;color:var(--text-heading);}
+        .condition-text{font-size:13px;color:var(--text-muted);margin-top:10px;background:var(--input-bg, #f9fafb);padding:10px;border-radius:8px;}
+        .deposit-actions{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;}
+        .btn-moveout{background:#fef9c3;color:#ca8a04;border:none;padding:8px 16px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;}
+        .btn-refund{background:#dcfce7;color:#16a34a;border:none;padding:8px 16px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;}
+        .btn-del{background:#fee2e2;color:#dc2626;border:none;padding:8px 14px;border-radius:8px;cursor:pointer;font-size:13px;}
+        .refund-highlight{color:#16a34a;font-weight:800;}
+        .deduction-highlight{color:#dc2626;font-weight:800;}
+    </style>
+</head>
+<body>
+<div class="container">
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+    <main class="main-content">
+        <div class="topbar">
+            <div><h1>🏠 Move-In / Move-Out Deposit Tracker</h1><p>Track security deposits, conditions, and refunds</p></div>
+            <button class="add-btn" onclick="document.getElementById('addModal').classList.add('active')">
+                <i class="fas fa-plus"></i> New Move-In Record
+            </button>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card"><i class="fas fa-home"></i><div><h2 th:text="${totalCount}">0</h2><p>Total Records</p></div></div>
+            <div class="stat-card"><i class="fas fa-door-open"></i><div><h2 th:text="${activeCount}">0</h2><p>Currently Active</p></div></div>
+            <div class="stat-card"><i class="fas fa-box"></i><div><h2 th:text="${movedOutCount}">0</h2><p>Moved Out, Pending Refund</p></div></div>
+            <div class="stat-card"><i class="fas fa-check-circle"></i><div><h2 th:text="${refundedCount}">0</h2><p>Refunded</p></div></div>
+        </div>
+
+        <div th:if="${#lists.isEmpty(deposits)}" style="text-align:center;padding:60px;color:var(--text-muted);">
+            <i class="fas fa-home" style="font-size:48px;display:block;margin-bottom:16px;opacity:0.2;"></i>
+            No deposit records yet. Click <strong>New Move-In Record</strong> to add one.
+        </div>
+
+        <div th:each="d : ${deposits}" class="deposit-card">
+            <div class="deposit-top">
+                <div>
+                    <div class="deposit-name" th:text="${d.tenantName}">—</div>
+                    <div class="deposit-apt">Apartment <span th:text="${d.apartmentNumber}">—</span></div>
+                </div>
+                <span class="badge" th:classappend="${#strings.toLowerCase(d.status)}" th:text="${d.status}">—</span>
+            </div>
+
+            <div class="deposit-grid">
+                <div class="deposit-stat">
+                    <label>Deposit Amount</label>
+                    <span th:text="'₹' + ${d.depositAmount}">—</span>
+                </div>
+                <div class="deposit-stat">
+                    <label>Move-In Date</label>
+                    <span th:text="${d.moveInDate}">—</span>
+                </div>
+                <div class="deposit-stat" th:if="${d.moveOutDate != null}">
+                    <label>Move-Out Date</label>
+                    <span th:text="${d.moveOutDate}">—</span>
+                </div>
+                <div class="deposit-stat" th:if="${d.status == 'MovedOut' or d.status == 'Refunded'}">
+                    <label>Deduction</label>
+                    <span class="deduction-highlight" th:text="'₹' + ${d.deductionAmount}">—</span>
+                </div>
+                <div class="deposit-stat" th:if="${d.status == 'MovedOut' or d.status == 'Refunded'}">
+                    <label>Refund Amount</label>
+                    <span class="refund-highlight" th:text="'₹' + ${d.refundAmount}">—</span>
+                </div>
+            </div>
+
+            <div class="condition-text" th:if="${d.moveInCondition != null and !#strings.isEmpty(d.moveInCondition)}">
+                <strong>Move-In Condition:</strong> <span th:text="${d.moveInCondition}">—</span>
+            </div>
+            <div class="condition-text" th:if="${d.moveOutCondition != null and !#strings.isEmpty(d.moveOutCondition)}">
+                <strong>Move-Out Condition:</strong> <span th:text="${d.moveOutCondition}">—</span>
+            </div>
+            <div class="condition-text" th:if="${d.deductionReason != null and !#strings.isEmpty(d.deductionReason)}">
+                <strong>Deduction Reason:</strong> <span th:text="${d.deductionReason}">—</span>
+            </div>
+
+            <div class="deposit-actions">
+                <button th:if="${d.status == 'Active'}" class="btn-moveout"
+                        th:attr="data-id=${d.id}" onclick="openMoveOut(this)">
+                    <i class="fas fa-sign-out-alt"></i> Record Move-Out
+                </button>
+                <form th:if="${d.status == 'MovedOut'}" th:action="@{/deposits/refund/{id}(id=${d.id})}" method="post">
+                    <button type="submit" class="btn-refund"><i class="fas fa-check"></i> Mark Refunded</button>
+                </form>
+                <form th:action="@{/deposits/delete/{id}(id=${d.id})}" method="post" onsubmit="return confirm('Delete this record?')">
+                    <button type="submit" class="btn-del"><i class="fas fa-trash"></i></button>
+                </form>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- Add Move-In Modal -->
+<div class="modal-overlay" id="addModal">
+    <div class="modal">
+        <h2>🏠 New Move-In Record</h2>
+        <form th:action="@{/deposits/add}" method="post">
+            <input type="text" name="tenantName" placeholder="Tenant Name" required>
+            <input type="text" name="apartmentNumber" placeholder="Apartment Number" required>
+            <input type="number" step="0.01" name="depositAmount" placeholder="Deposit Amount (₹)" required>
+            <input type="date" name="moveInDate" required>
+            <textarea name="moveInCondition" placeholder="Move-in condition notes (e.g. walls fresh paint, no damage, all fixtures working)"></textarea>
+            <div class="modal-btns">
+                <button type="button" class="btn-cancel" onclick="document.getElementById('addModal').classList.remove('active')">Cancel</button>
+                <button type="submit" class="btn-save">Save</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Move-Out Modal -->
+<div class="modal-overlay" id="moveOutModal">
+    <div class="modal">
+        <h2>📦 Record Move-Out</h2>
+        <form id="moveOutForm" method="post">
+            <input type="date" name="moveOutDate" required>
+            <textarea name="moveOutCondition" placeholder="Move-out condition notes (e.g. wall scratches in bedroom, broken tap)"></textarea>
+            <input type="number" step="0.01" name="deductionAmount" placeholder="Deduction Amount (₹) — enter 0 if none">
+            <input type="text" name="deductionReason" placeholder="Reason for deduction (optional)">
+            <div class="modal-btns">
+                <button type="button" class="btn-cancel" onclick="document.getElementById('moveOutModal').classList.remove('active')">Cancel</button>
+                <button type="submit" class="btn-save">Save Move-Out</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function openMoveOut(btn) {
+        const id = btn.getAttribute('data-id');
+        document.getElementById('moveOutForm').action = '/deposits/moveout/' + id;
+        document.getElementById('moveOutModal').classList.add('active');
+    }
+</script>
+</body>
+</html>

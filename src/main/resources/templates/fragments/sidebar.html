@@ -28,6 +28,9 @@
             <li th:classappend="${activePage == 'leases'} ? 'sidebar-active'">
                 <a th:href="@{/leases}"><i class="fas fa-file-contract"></i> Leases</a>
             </li>
+            <li th:classappend="${activePage == 'deposits-page'} ? 'sidebar-active'">
+                <a th:href="@{/deposits}"><i class="fas fa-home"></i> Deposits</a>
+            </li>
             <li th:classappend="${activePage == 'calendar'} ? 'sidebar-active'">
                 <a th:href="@{/vacancy-calendar}"><i class="fas fa-calendar-alt"></i> Vacancy Calendar</a>
             </li>
