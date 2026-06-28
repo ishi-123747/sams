@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <script th:src="@{/js/theme.js}"></script>
+    <meta charset="UTF-8">
+    <title>Amenities | SAMS</title>
+    <link rel="stylesheet" th:href="@{/css/sams-global.css}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:var(--modal-overlay);z-index:1000;justify-content:center;align-items:center;}
+        .modal-overlay.active{display:flex;}
+        .modal{background:var(--surface-bg);color:var(--text-body);border-radius:12px;padding:30px;width:450px;max-width:90%;max-height:90vh;overflow-y:auto;}
+        .modal h2{margin-bottom:20px;color:var(--text-heading);}
+        .modal input,.modal select,.modal textarea{width:100%;padding:10px;margin-bottom:12px;border:1px solid var(--input-border);border-radius:8px;font-size:14px;box-sizing:border-box;background:var(--surface-bg);color:var(--text-body);}
+        .modal-btns{display:flex;gap:10px;justify-content:flex-end;margin-top:10px;}
+        .btn-cancel{padding:10px 20px;border:1px solid var(--input-border);border-radius:8px;background:var(--surface-bg);color:var(--text-body);cursor:pointer;}
+        .btn-save{padding:10px 20px;border:none;border-radius:8px;background:#4f46e5;color:#fff;cursor:pointer;}
+        .amenity-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px;margin-bottom:30px;}
+        .amenity-card{background:var(--surface-bg);border-radius:12px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,0.08);text-align:center;}
+        .amenity-icon{font-size:36px;margin-bottom:10px;}
+        .amenity-name{font-size:16px;font-weight:700;color:var(--text-heading);margin-bottom:6px;}
+        .amenity-detail{font-size:12px;color:var(--text-muted);margin:3px 0;}
+        .badge{padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600;display:inline-block;}
+        .active,.approved{background:#dcfce7;color:#16a34a;}
+        .inactive{background:#fee2e2;color:#dc2626;}
+        .pending{background:#fef9c3;color:#ca8a04;}
+        .rejected{background:#fee2e2;color:#dc2626;}
+        table{width:100%;border-collapse:collapse;}
+        th,td{padding:12px;text-align:left;border-bottom:1px solid var(--input-border);font-size:14px;}
+        th{color:var(--text-muted);font-weight:600;}
+        .btn-approve{background:#dcfce7;color:#16a34a;border:none;padding:5px 10px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;}
+        .btn-reject{background:#fee2e2;color:#dc2626;border:none;padding:5px 10px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;}
+        .btn-del{background:#f3f4f6;color:#6b7280;border:none;padding:5px 10px;border-radius:6px;cursor:pointer;font-size:12px;}
+        .section-title{font-size:16px;font-weight:700;color:var(--text-heading);margin:24px 0 14px;}
+    </style>
+</head>
+<body>
+<div class="container">
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+    <main class="main-content">
+        <div class="topbar">
+            <div><h1>🏊 Amenity Management</h1><p>Manage facilities and tenant bookings</p></div>
+            <button class="add-btn" onclick="document.getElementById('addModal').classList.add('active')">
+                <i class="fas fa-plus"></i> Add Amenity
+            </button>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card"><i class="fas fa-swimming-pool"></i><div><h2 th:text="${totalAmenities}">0</h2><p>Total Amenities</p></div></div>
+            <div class="stat-card"><i class="fas fa-check-circle"></i><div><h2 th:text="${activeAmenities}">0</h2><p>Active</p></div></div>
+            <div class="stat-card"><i class="fas fa-calendar-check"></i><div><h2 th:text="${totalBookings}">0</h2><p>Total Bookings</p></div></div>
+            <div class="stat-card"><i class="fas fa-clock"></i><div><h2 th:text="${pendingBookings}">0</h2><p>Pending Approval</p></div></div>
+        </div>
+
+        <div class="section-title">Amenities</div>
+        <div th:if="${#lists.isEmpty(amenities)}" style="text-align:center;padding:40px;color:var(--text-muted);">
+            No amenities added yet. Click <strong>Add Amenity</strong> to get started.
+        </div>
+        <div class="amenity-grid">
+            <div th:each="a : ${amenities}" class="amenity-card">
+                <div class="amenity-icon">
+                    <span th:text="${a.type == 'Gym' ? '🏋️' : (a.type == 'Pool' ? '🏊' : (a.type == 'Hall' ? '🎭' : (a.type == 'Garden' ? '🌿' : '🏢')))}">🏢</span>
+                </div>
+                <div class="amenity-name" th:text="${a.name}">—</div>
+                <span class="badge" th:classappend="${#strings.toLowerCase(a.status)}" th:text="${a.status}">—</span>
+                <div class="amenity-detail" th:if="${a.capacity > 0}">👥 Capacity: <span th:text="${a.capacity}">—</span></div>
+                <div class="amenity-detail" th:if="${a.openTime != null}">🕐 <span th:text="${a.openTime}">—</span> – <span th:text="${a.closeTime}">—</span></div>
+                <div class="amenity-detail" th:if="${a.description != null}" th:text="${a.description}">—</div>
+                <form th:action="@{/amenities/delete/{id}(id=${a.id})}" method="post" style="margin-top:12px;" onsubmit="return confirm('Delete this amenity?')">
+                    <button type="submit" class="btn-del"><i class="fas fa-trash"></i> Delete</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="section-title">Booking Requests</div>
+        <div style="background:var(--surface-bg);border-radius:14px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+            <div th:if="${#lists.isEmpty(bookings)}" style="text-align:center;padding:30px;color:var(--text-muted);">No bookings yet.</div>
+            <table th:if="${!#lists.isEmpty(bookings)}">
+                <thead>
+                <tr><th>Amenity</th><th>Tenant</th><th>Apt</th><th>Date</th><th>Time Slot</th><th>Status</th><th>Actions</th></tr>
+                </thead>
+                <tbody>
+                <tr th:each="b : ${bookings}">
+                    <td th:text="${b.amenityName}">—</td>
+                    <td th:text="${b.tenantName}">—</td>
+                    <td th:text="${b.apartmentNumber}">—</td>
+                    <td th:text="${b.bookingDate}">—</td>
+                    <td th:text="${b.timeSlot}">—</td>
+                    <td><span class="badge" th:classappend="${#strings.toLowerCase(b.status)}" th:text="${b.status}">—</span></td>
+                    <td style="display:flex;gap:6px;">
+                        <form th:if="${b.status == 'Pending'}" th:action="@{/amenities/booking/approve/{id}(id=${b.id})}" method="post">
+                            <button type="submit" class="btn-approve">✓ Approve</button>
+                        </form>
+                        <form th:if="${b.status == 'Pending'}" th:action="@{/amenities/booking/reject/{id}(id=${b.id})}" method="post">
+                            <button type="submit" class="btn-reject">✗ Reject</button>
+                        </form>
+                        <form th:action="@{/amenities/booking/delete/{id}(id=${b.id})}" method="post" onsubmit="return confirm('Delete?')">
+                            <button type="submit" class="btn-del"><i class="fas fa-trash"></i></button>
+                        </form>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+</div>
+
+<!-- Add Amenity Modal -->
+<div class="modal-overlay" id="addModal">
+    <div class="modal">
+        <h2>🏊 Add Amenity</h2>
+        <form th:action="@{/amenities/add}" method="post">
+            <input type="text" name="name" placeholder="Amenity Name (e.g. Rooftop Pool)" required>
+            <select name="type" required>
+                <option value="">-- Type --</option>
+                <option value="Gym">Gym</option>
+                <option value="Pool">Pool</option>
+                <option value="Hall">Hall / Banquet</option>
+                <option value="Garden">Garden / Terrace</option>
+                <option value="Club">Club House</option>
+                <option value="Other">Other</option>
+            </select>
+            <input type="text" name="description" placeholder="Description (optional)">
+            <input type="number" name="capacity" placeholder="Max Capacity">
+            <input type="time" name="openTime" placeholder="Opening Time">
+            <input type="time" name="closeTime" placeholder="Closing Time">
+            <select name="status">
+                <option value="Active">Active</option>
+                <option value="Inactive">Inactive (Under Maintenance)</option>
+            </select>
+            <div class="modal-btns">
+                <button type="button" class="btn-cancel" onclick="document.getElementById('addModal').classList.remove('active')">Cancel</button>
+                <button type="submit" class="btn-save">Save</button>
+            </div>
+        </form>
+    </div>
+</div>
+</body>
+</html>

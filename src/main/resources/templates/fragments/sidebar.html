@@ -31,8 +31,17 @@
             <li th:classappend="${activePage == 'feedback'} ? 'active'">
                 <a th:href="@{/feedback}"><i class="fas fa-star"></i> Feedback</a>
             </li>
-            <li th:classappend="${activePage == 'parking'} ? 'active'">
+            <li th:classappend="${activePage == 'amenities-admin'} ? 'active'">
+                <a th:href="@{/amenities}"><i class="fas fa-swimming-pool"></i> Amenities</a>
+            </li>
+            <li th:classappend="${activePage == 'documents-admin'} ? 'active'">
+                <a th:href="@{/documents}"><i class="fas fa-folder"></i> Documents</a>
+            </li>
+            <li th:classappend="${activePage == 'parking-admin'} ? 'active'">
                 <a th:href="@{/parking}"><i class="fas fa-parking"></i> Parking</a>
+            </li>
+            <li th:classappend="${activePage == 'emergency-admin'} ? 'active'">
+                <a th:href="@{/emergency-contacts}"><i class="fas fa-phone-alt"></i> Emergency</a>
             </li>
             <li th:classappend="${activePage == 'maintenance'} ? 'active'">
                 <a th:href="@{/maintenance}"><i class="fas fa-wrench"></i> Maintenance</a>
@@ -75,6 +84,15 @@
             </li>
             <li th:classappend="${activePage == 'feedback'} ? 'active'">
                 <a th:href="@{/my-feedback}"><i class="fas fa-star"></i> My Feedback</a>
+            </li>
+            <li th:classappend="${activePage == 'amenities-tenant'} ? 'active'">
+                <a th:href="@{/my-amenities}"><i class="fas fa-swimming-pool"></i> Book Amenity</a>
+            </li>
+            <li th:classappend="${activePage == 'documents-tenant'} ? 'active'">
+                <a th:href="@{/my-documents}"><i class="fas fa-folder"></i> My Documents</a>
+            </li>
+            <li th:classappend="${activePage == 'emergency-tenant'} ? 'active'">
+                <a th:href="@{/emergency-contacts}"><i class="fas fa-phone-alt"></i> Emergency</a>
             </li>
             <li>
                 <a th:href="@{/logout}"><i class="fas fa-sign-out-alt"></i> Logout</a>

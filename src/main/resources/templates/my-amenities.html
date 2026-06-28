@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <script th:src="@{/js/theme.js}"></script>
+    <meta charset="UTF-8">
+    <title>Amenity Booking | SAMS</title>
+    <link rel="stylesheet" th:href="@{/css/sams-global.css}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .page-box{background:var(--surface-bg);border-radius:14px;padding:28px;box-shadow:0 2px 8px rgba(0,0,0,0.08);margin-bottom:24px;}
+        .page-box h3{margin:0 0 18px;color:var(--text-heading);font-size:16px;}
+        .amenity-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px;margin-bottom:20px;}
+        .amenity-tile{border:2px solid var(--input-border);border-radius:12px;padding:16px;text-align:center;cursor:pointer;transition:all 0.2s;}
+        .amenity-tile:hover,.amenity-tile.selected{border-color:#4f46e5;background:#ede9fe;}
+        .amenity-tile .icon{font-size:28px;margin-bottom:6px;}
+        .amenity-tile .name{font-weight:600;font-size:14px;color:var(--text-heading);}
+        .amenity-tile .time{font-size:11px;color:var(--text-muted);margin-top:4px;}
+        .book-form input,.book-form select{width:100%;padding:10px;border:1px solid var(--input-border);border-radius:8px;font-size:14px;background:var(--surface-bg);color:var(--text-body);box-sizing:border-box;margin-bottom:12px;}
+        .submit-btn{padding:10px 24px;background:#4f46e5;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600;}
+        .badge{padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600;display:inline-block;}
+        .approved{background:#dcfce7;color:#16a34a;}
+        .pending{background:#fef9c3;color:#ca8a04;}
+        .rejected{background:#fee2e2;color:#dc2626;}
+        table{width:100%;border-collapse:collapse;}
+        th,td{padding:12px;text-align:left;border-bottom:1px solid var(--input-border);font-size:14px;}
+        th{color:var(--text-muted);font-weight:600;}
+    </style>
+</head>
+<body>
+<div class="container">
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+    <main class="main-content">
+        <div class="topbar">
+            <div><h1>🏊 Book an Amenity</h1><p>Reserve facilities available in your building</p></div>
+        </div>
+
+        <div class="page-box">
+            <h3><i class="fas fa-calendar-plus" style="color:#4f46e5;margin-right:8px;"></i>Make a Booking</h3>
+
+            <div th:if="${#lists.isEmpty(amenities)}" style="text-align:center;padding:20px;color:var(--text-muted);">
+                No amenities available right now. Check back later.
+            </div>
+
+            <form th:if="${!#lists.isEmpty(amenities)}" th:action="@{/my-amenities/book}" method="post" class="book-form">
+                <div class="amenity-cards">
+                    <div th:each="a : ${amenities}" th:if="${a.status == 'Active'}"
+                         class="amenity-tile"
+                         th:attr="data-name=${a.name}"
+                         onclick="selectAmenity(this)">
+                        <div class="icon">
+                            <span th:text="${a.type == 'Gym' ? '🏋️' : (a.type == 'Pool' ? '🏊' : (a.type == 'Hall' ? '🎭' : (a.type == 'Garden' ? '🌿' : '🏢')))}">🏢</span>
+                        </div>
+                        <div class="name" th:text="${a.name}">—</div>
+                        <div class="time" th:if="${a.openTime != null}" th:text="${a.openTime + ' – ' + a.closeTime}">—</div>
+                    </div>
+                </div>
+                <input type="hidden" name="amenityName" id="selectedAmenity" required>
+                <input type="date" name="bookingDate" required>
+                <select name="timeSlot" required>
+                    <option value="">-- Select Time Slot --</option>
+                    <option value="6:00 AM - 8:00 AM">6:00 AM – 8:00 AM</option>
+                    <option value="8:00 AM - 10:00 AM">8:00 AM – 10:00 AM</option>
+                    <option value="10:00 AM - 12:00 PM">10:00 AM – 12:00 PM</option>
+                    <option value="12:00 PM - 2:00 PM">12:00 PM – 2:00 PM</option>
+                    <option value="2:00 PM - 4:00 PM">2:00 PM – 4:00 PM</option>
+                    <option value="4:00 PM - 6:00 PM">4:00 PM – 6:00 PM</option>
+                    <option value="6:00 PM - 8:00 PM">6:00 PM – 8:00 PM</option>
+                    <option value="8:00 PM - 10:00 PM">8:00 PM – 10:00 PM</option>
+                </select>
+                <button type="submit" class="submit-btn"><i class="fas fa-calendar-check"></i> Book Now</button>
+            </form>
+        </div>
+
+        <div class="page-box">
+            <h3><i class="fas fa-history" style="color:#4f46e5;margin-right:8px;"></i>My Bookings</h3>
+            <div th:if="${#lists.isEmpty(myBookings)}" style="text-align:center;padding:20px;color:var(--text-muted);">No bookings yet.</div>
+            <table th:if="${!#lists.isEmpty(myBookings)}">
+                <thead>
+                <tr><th>Amenity</th><th>Date</th><th>Time Slot</th><th>Status</th></tr>
+                </thead>
+                <tbody>
+                <tr th:each="b : ${myBookings}">
+                    <td th:text="${b.amenityName}">—</td>
+                    <td th:text="${b.bookingDate}">—</td>
+                    <td th:text="${b.timeSlot}">—</td>
+                    <td><span class="badge" th:classappend="${#strings.toLowerCase(b.status)}" th:text="${b.status}">—</span></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+</div>
+<script>
+    function selectAmenity(tile) {
+        document.querySelectorAll('.amenity-tile').forEach(t => t.classList.remove('selected'));
+        tile.classList.add('selected');
+        document.getElementById('selectedAmenity').value = tile.getAttribute('data-name');
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <script th:src="@{/js/theme.js}"></script>
+    <meta charset="UTF-8">
+    <title>Emergency Contacts | SAMS</title>
+    <link rel="stylesheet" th:href="@{/css/sams-global.css}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:var(--modal-overlay);z-index:1000;justify-content:center;align-items:center;}
+        .modal-overlay.active{display:flex;}
+        .modal{background:var(--surface-bg);color:var(--text-body);border-radius:12px;padding:30px;width:450px;max-width:90%;max-height:90vh;overflow-y:auto;}
+        .modal h2{margin-bottom:20px;color:var(--text-heading);}
+        .modal input,.modal select{width:100%;padding:10px;margin-bottom:12px;border:1px solid var(--input-border);border-radius:8px;font-size:14px;box-sizing:border-box;background:var(--surface-bg);color:var(--text-body);}
+        .modal-btns{display:flex;gap:10px;justify-content:flex-end;margin-top:10px;}
+        .btn-cancel{padding:10px 20px;border:1px solid var(--input-border);border-radius:8px;background:var(--surface-bg);color:var(--text-body);cursor:pointer;}
+        .btn-save{padding:10px 20px;border:none;border-radius:8px;background:#4f46e5;color:#fff;cursor:pointer;}
+        .section-box{background:var(--surface-bg);border-radius:14px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,0.08);margin-bottom:20px;}
+        .section-header{display:flex;align-items:center;gap:10px;margin-bottom:16px;}
+        .section-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;}
+        .icon-fire{background:#fee2e2;}
+        .icon-medical{background:#dcfce7;}
+        .icon-police{background:#dbeafe;}
+        .icon-utility{background:#fef9c3;}
+        .icon-other{background:#f3e8ff;}
+        .section-title-text{font-size:15px;font-weight:700;color:var(--text-heading);}
+        .contact-card{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--input-border);}
+        .contact-card:last-child{border-bottom:none;}
+        .contact-info{flex:1;}
+        .contact-name{font-weight:600;font-size:14px;color:var(--text-heading);}
+        .contact-desc{font-size:12px;color:var(--text-muted);margin-top:2px;}
+        .contact-avail{font-size:11px;color:var(--text-muted);margin-top:2px;}
+        .contact-phone{display:flex;flex-direction:column;align-items:flex-end;gap:6px;}
+        .phone-btn{display:flex;align-items:center;gap:6px;background:#4f46e5;color:#fff;padding:7px 14px;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600;}
+        .phone-btn.alt{background:#ede9fe;color:#4f46e5;font-size:12px;padding:5px 10px;}
+        .priority-badge{padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;}
+        .high{background:#fee2e2;color:#dc2626;}
+        .medium{background:#fef9c3;color:#ca8a04;}
+        .low{background:#dcfce7;color:#16a34a;}
+        .admin-actions{display:flex;gap:6px;margin-left:12px;}
+        .btn-edit-sm{background:#ede9fe;color:#4f46e5;border:none;padding:5px 8px;border-radius:6px;cursor:pointer;font-size:12px;}
+        .btn-del-sm{background:#fee2e2;color:#dc2626;border:none;padding:5px 8px;border-radius:6px;cursor:pointer;font-size:12px;}
+        .empty-cat{text-align:center;padding:16px;color:var(--text-muted);font-size:13px;}
+        .sos-banner{background:linear-gradient(135deg,#dc2626,#b91c1c);color:#fff;border-radius:14px;padding:20px 24px;margin-bottom:24px;display:flex;align-items:center;gap:16px;}
+        .sos-banner .sos-title{font-size:18px;font-weight:800;margin:0;}
+        .sos-banner .sos-sub{font-size:13px;opacity:0.85;margin:4px 0 0;}
+        .sos-nums{display:flex;gap:12px;margin-left:auto;flex-wrap:wrap;}
+        .sos-num{background:rgba(255,255,255,0.2);padding:8px 16px;border-radius:8px;font-weight:700;font-size:14px;}
+    </style>
+</head>
+<body>
+<div class="container">
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+    <main class="main-content">
+        <div class="topbar">
+            <div><h1>🆘 Emergency Contacts</h1><p>Important contacts for residents and staff</p></div>
+            <button th:if="${session.role == 'ADMIN'}" class="add-btn"
+                    onclick="document.getElementById('addModal').classList.add('active')">
+                <i class="fas fa-plus"></i> Add Contact
+            </button>
+        </div>
+
+        <!-- SOS Banner -->
+        <div class="sos-banner">
+            <div>
+                <div class="sos-title">🚨 Emergency Numbers</div>
+                <div class="sos-sub">Call immediately in case of emergency</div>
+            </div>
+            <div class="sos-nums">
+                <div class="sos-num">🚒 Fire: 101</div>
+                <div class="sos-num">🚑 Ambulance: 108</div>
+                <div class="sos-num">👮 Police: 100</div>
+                <div class="sos-num">⚡ Emergency: 112</div>
+            </div>
+        </div>
+
+        <!-- Fire -->
+        <div class="section-box" th:if="${!#lists.isEmpty(fireContacts)}">
+            <div class="section-header">
+                <div class="section-icon icon-fire">🔥</div>
+                <div class="section-title-text">Fire Emergency</div>
+            </div>
+            <div th:each="c : ${fireContacts}" class="contact-card">
+                <div class="contact-info">
+                    <div class="contact-name">
+                        <span th:text="${c.name}">—</span>
+                        <span class="priority-badge" th:classappend="${#strings.toLowerCase(c.priority)}"
+                              th:text="${c.priority}" style="margin-left:8px;">—</span>
+                    </div>
+                    <div class="contact-desc" th:text="${c.description}">—</div>
+                    <div class="contact-avail" th:if="${c.availability != null}">🕐 <span th:text="${c.availability}">—</span></div>
+                </div>
+                <div class="contact-phone">
+                    <a th:href="'tel:' + ${c.phone}" class="phone-btn"><i class="fas fa-phone"></i> <span th:text="${c.phone}">—</span></a>
+                    <a th:if="${c.altPhone != null and !#strings.isEmpty(c.altPhone)}" th:href="'tel:' + ${c.altPhone}" class="phone-btn alt"><span th:text="${c.altPhone}">—</span></a>
+                </div>
+                <div class="admin-actions" th:if="${session.role == 'ADMIN'}">
+                    <button class="btn-edit-sm"
+                            th:attr="data-id=${c.id},data-name=${c.name},data-cat=${c.category},data-phone=${c.phone},data-alt=${c.altPhone},data-desc=${c.description},data-avail=${c.availability},data-priority=${c.priority}"
+                            onclick="openEdit(this)"><i class="fas fa-pen"></i></button>
+                    <form th:action="@{/emergency-contacts/delete/{id}(id=${c.id})}" method="post" style="display:inline;" onsubmit="return confirm('Delete?')">
+                        <button type="submit" class="btn-del-sm"><i class="fas fa-trash"></i></button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Medical -->
+        <div class="section-box" th:if="${!#lists.isEmpty(medicalContacts)}">
+            <div class="section-header">
+                <div class="section-icon icon-medical">🏥</div>
+                <div class="section-title-text">Medical Emergency</div>
+            </div>
+            <div th:each="c : ${medicalContacts}" class="contact-card">
+                <div class="contact-info">
+                    <div class="contact-name">
+                        <span th:text="${c.name}">—</span>
+                        <span class="priority-badge" th:classappend="${#strings.toLowerCase(c.priority)}"
+                              th:text="${c.priority}" style="margin-left:8px;">—</span>
+                    </div>
+                    <div class="contact-desc" th:text="${c.description}">—</div>
+                    <div class="contact-avail" th:if="${c.availability != null}">🕐 <span th:text="${c.availability}">—</span></div>
+                </div>
+                <div class="contact-phone">
+                    <a th:href="'tel:' + ${c.phone}" class="phone-btn"><i class="fas fa-phone"></i> <span th:text="${c.phone}">—</span></a>
+                    <a th:if="${c.altPhone != null and !#strings.isEmpty(c.altPhone)}" th:href="'tel:' + ${c.altPhone}" class="phone-btn alt"><span th:text="${c.altPhone}">—</span></a>
+                </div>
+                <div class="admin-actions" th:if="${session.role == 'ADMIN'}">
+                    <button class="btn-edit-sm"
+                            th:attr="data-id=${c.id},data-name=${c.name},data-cat=${c.category},data-phone=${c.phone},data-alt=${c.altPhone},data-desc=${c.description},data-avail=${c.availability},data-priority=${c.priority}"
+                            onclick="openEdit(this)"><i class="fas fa-pen"></i></button>
+                    <form th:action="@{/emergency-contacts/delete/{id}(id=${c.id})}" method="post" style="display:inline;" onsubmit="return confirm('Delete?')">
+                        <button type="submit" class="btn-del-sm"><i class="fas fa-trash"></i></button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Police -->
+        <div class="section-box" th:if="${!#lists.isEmpty(policeContacts)}">
+            <div class="section-header">
+                <div class="section-icon icon-police">👮</div>
+                <div class="section-title-text">Police / Security</div>
+            </div>
+            <div th:each="c : ${policeContacts}" class="contact-card">
+                <div class="contact-info">
+                    <div class="contact-name">
+                        <span th:text="${c.name}">—</span>
+                        <span class="priority-badge" th:classappend="${#strings.toLowerCase(c.priority)}"
+                              th:text="${c.priority}" style="margin-left:8px;">—</span>
+                    </div>
+                    <div class="contact-desc" th:text="${c.description}">—</div>
+                    <div class="contact-avail" th:if="${c.availability != null}">🕐 <span th:text="${c.availability}">—</span></div>
+                </div>
+                <div class="contact-phone">
+                    <a th:href="'tel:' + ${c.phone}" class="phone-btn"><i class="fas fa-phone"></i> <span th:text="${c.phone}">—</span></a>
+                    <a th:if="${c.altPhone != null and !#strings.isEmpty(c.altPhone)}" th:href="'tel:' + ${c.altPhone}" class="phone-btn alt"><span th:text="${c.altPhone}">—</span></a>
+                </div>
+                <div class="admin-actions" th:if="${session.role == 'ADMIN'}">
+                    <button class="btn-edit-sm"
+                            th:attr="data-id=${c.id},data-name=${c.name},data-cat=${c.category},data-phone=${c.phone},data-alt=${c.altPhone},data-desc=${c.description},data-avail=${c.availability},data-priority=${c.priority}"
+                            onclick="openEdit(this)"><i class="fas fa-pen"></i></button>
+                    <form th:action="@{/emergency-contacts/delete/{id}(id=${c.id})}" method="post" style="display:inline;" onsubmit="return confirm('Delete?')">
+                        <button type="submit" class="btn-del-sm"><i class="fas fa-trash"></i></button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Utility -->
+        <div class="section-box" th:if="${!#lists.isEmpty(utilityContacts)}">
+            <div class="section-header">
+                <div class="section-icon icon-utility">⚡</div>
+                <div class="section-title-text">Utility / Services</div>
+            </div>
+            <div th:each="c : ${utilityContacts}" class="contact-card">
+                <div class="contact-info">
+                    <div class="contact-name">
+                        <span th:text="${c.name}">—</span>
+                        <span class="priority-badge" th:classappend="${#strings.toLowerCase(c.priority)}"
+                              th:text="${c.priority}" style="margin-left:8px;">—</span>
+                    </div>
+                    <div class="contact-desc" th:text="${c.description}">—</div>
+                    <div class="contact-avail" th:if="${c.availability != null}">🕐 <span th:text="${c.availability}">—</span></div>
+                </div>
+                <div class="contact-phone">
+                    <a th:href="'tel:' + ${c.phone}" class="phone-btn"><i class="fas fa-phone"></i> <span th:text="${c.phone}">—</span></a>
+                    <a th:if="${c.altPhone != null and !#strings.isEmpty(c.altPhone)}" th:href="'tel:' + ${c.altPhone}" class="phone-btn alt"><span th:text="${c.altPhone}">—</span></a>
+                </div>
+                <div class="admin-actions" th:if="${session.role == 'ADMIN'}">
+                    <button class="btn-edit-sm"
+                            th:attr="data-id=${c.id},data-name=${c.name},data-cat=${c.category},data-phone=${c.phone},data-alt=${c.altPhone},data-desc=${c.description},data-avail=${c.availability},data-priority=${c.priority}"
+                            onclick="openEdit(this)"><i class="fas fa-pen"></i></button>
+                    <form th:action="@{/emergency-contacts/delete/{id}(id=${c.id})}" method="post" style="display:inline;" onsubmit="return confirm('Delete?')">
+                        <button type="submit" class="btn-del-sm"><i class="fas fa-trash"></i></button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- All contacts if no category matches -->
+        <div class="section-box"
+             th:if="${#lists.isEmpty(fireContacts) and #lists.isEmpty(medicalContacts) and #lists.isEmpty(policeContacts) and #lists.isEmpty(utilityContacts) and !#lists.isEmpty(contacts)}">
+            <div class="section-header">
+                <div class="section-icon icon-other">📞</div>
+                <div class="section-title-text">All Contacts</div>
+            </div>
+            <div th:each="c : ${contacts}" class="contact-card">
+                <div class="contact-info">
+                    <div class="contact-name" th:text="${c.name}">—</div>
+                    <div class="contact-desc" th:text="${c.description}">—</div>
+                </div>
+                <div class="contact-phone">
+                    <a th:href="'tel:' + ${c.phone}" class="phone-btn"><i class="fas fa-phone"></i> <span th:text="${c.phone}">—</span></a>
+                </div>
+            </div>
+        </div>
+
+        <div th:if="${#lists.isEmpty(contacts)}" style="text-align:center;padding:60px;color:var(--text-muted);">
+            <i class="fas fa-phone-slash" style="font-size:48px;display:block;margin-bottom:16px;opacity:0.2;"></i>
+            No emergency contacts added yet.
+            <span th:if="${session.role == 'ADMIN'}"> Click <strong>Add Contact</strong> to get started.</span>
+        </div>
+    </main>
+</div>
+
+<!-- Add Modal -->
+<div class="modal-overlay" id="addModal">
+    <div class="modal">
+        <h2>📞 Add Emergency Contact</h2>
+        <form th:action="@{/emergency-contacts/add}" method="post">
+            <input type="text" name="name" placeholder="Contact Name (e.g. City Fire Station)" required>
+            <select name="category" required>
+                <option value="">-- Category --</option>
+                <option value="Fire">🔥 Fire</option>
+                <option value="Medical">🏥 Medical</option>
+                <option value="Police">👮 Police / Security</option>
+                <option value="Utility">⚡ Utility / Services</option>
+                <option value="Other">Other</option>
+            </select>
+            <input type="tel" name="phone" placeholder="Primary Phone Number" required>
+            <input type="tel" name="altPhone" placeholder="Alternate Phone (optional)">
+            <input type="text" name="description" placeholder="Description (e.g. Nearest fire station)">
+            <input type="text" name="availability" placeholder="Availability (e.g. 24/7, 9AM–6PM)">
+            <select name="priority">
+                <option value="High">🔴 High Priority</option>
+                <option value="Medium">🟡 Medium Priority</option>
+                <option value="Low">🟢 Low Priority</option>
+            </select>
+            <div class="modal-btns">
+                <button type="button" class="btn-cancel" onclick="document.getElementById('addModal').classList.remove('active')">Cancel</button>
+                <button type="submit" class="btn-save">Save</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Edit Modal -->
+<div class="modal-overlay" id="editModal">
+    <div class="modal">
+        <h2>✏️ Edit Contact</h2>
+        <form th:action="@{/emergency-contacts/edit}" method="post">
+            <input type="hidden" id="eId" name="id">
+            <input type="text" id="eName" name="name" placeholder="Contact Name" required>
+            <select id="eCat" name="category" required>
+                <option value="">-- Category --</option>
+                <option value="Fire">🔥 Fire</option>
+                <option value="Medical">🏥 Medical</option>
+                <option value="Police">👮 Police / Security</option>
+                <option value="Utility">⚡ Utility / Services</option>
+                <option value="Other">Other</option>
+            </select>
+            <input type="tel" id="ePhone" name="phone" placeholder="Primary Phone" required>
+            <input type="tel" id="eAlt" name="altPhone" placeholder="Alternate Phone">
+            <input type="text" id="eDesc" name="description" placeholder="Description">
+            <input type="text" id="eAvail" name="availability" placeholder="Availability">
+            <select id="ePriority" name="priority">
+                <option value="High">🔴 High Priority</option>
+                <option value="Medium">🟡 Medium Priority</option>
+                <option value="Low">🟢 Low Priority</option>
+            </select>
+            <div class="modal-btns">
+                <button type="button" class="btn-cancel" onclick="document.getElementById('editModal').classList.remove('active')">Cancel</button>
+                <button type="submit" class="btn-save">Save</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function openEdit(btn) {
+        document.getElementById('eId').value = btn.getAttribute('data-id');
+        document.getElementById('eName').value = btn.getAttribute('data-name') || '';
+        document.getElementById('eCat').value = btn.getAttribute('data-cat') || '';
+        document.getElementById('ePhone').value = btn.getAttribute('data-phone') || '';
+        document.getElementById('eAlt').value = btn.getAttribute('data-alt') || '';
+        document.getElementById('eDesc').value = btn.getAttribute('data-desc') || '';
+        document.getElementById('eAvail').value = btn.getAttribute('data-avail') || '';
+        document.getElementById('ePriority').value = btn.getAttribute('data-priority') || 'High';
+        document.getElementById('editModal').classList.add('active');
+    }
+</script>
+</body>
+</html>
