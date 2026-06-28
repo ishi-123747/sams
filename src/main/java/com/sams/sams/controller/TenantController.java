@@ -24,17 +24,22 @@ public class TenantController {
 
     @PostMapping("/tenants/add")
     public String addTenant(@ModelAttribute Tenant tenant) {
-        tenantService.saveTenant(tenant); return "redirect:/tenants";
+        tenantService.saveTenant(tenant);
+        return "redirect:/tenants";
     }
 
     @PostMapping("/tenants/edit")
     public String editTenant(@ModelAttribute Tenant tenant) {
         Tenant existing = tenantService.getTenantById(tenant.getId());
         if (existing != null) {
-            existing.setName(tenant.getName()); existing.setEmail(tenant.getEmail());
-            existing.setPhone(tenant.getPhone()); existing.setAadhar(tenant.getAadhar());
+            existing.setName(tenant.getName());
+            existing.setEmail(tenant.getEmail());
+            existing.setPhone(tenant.getPhone());
+            existing.setAadhar(tenant.getAadhar());
             existing.setApartmentNumber(tenant.getApartmentNumber());
-            existing.setJoinDate(tenant.getJoinDate()); existing.setStatus(tenant.getStatus());
+            existing.setJoinDate(tenant.getJoinDate());
+            existing.setStatus(tenant.getStatus());
+            existing.setDateOfBirth(tenant.getDateOfBirth());
             tenantService.saveTenant(existing);
         }
         return "redirect:/tenants";
@@ -42,6 +47,7 @@ public class TenantController {
 
     @PostMapping("/tenants/delete/{id}")
     public String deleteTenant(@PathVariable Long id) {
-        tenantService.deleteTenant(id); return "redirect:/tenants";
+        tenantService.deleteTenant(id);
+        return "redirect:/tenants";
     }
 }
