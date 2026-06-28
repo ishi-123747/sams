@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Rent Agreement | SAMS</title>
+    <style>
+        body{font-family:'Times New Roman', serif;max-width:800px;margin:40px auto;padding:40px;color:#1a1a1a;line-height:1.7;}
+        h1{text-align:center;font-size:22px;text-transform:uppercase;letter-spacing:2px;margin-bottom:6px;}
+        .subtitle{text-align:center;color:#555;font-size:13px;margin-bottom:30px;}
+        .section{margin-bottom:20px;}
+        .section h3{font-size:15px;border-bottom:1px solid #999;padding-bottom:6px;margin-bottom:10px;}
+        .row{display:flex;justify-content:space-between;margin-bottom:8px;font-size:14px;}
+        .row strong{color:#333;}
+        .terms{font-size:13px;color:#333;white-space:pre-wrap;}
+        .signature-block{display:flex;justify-content:space-between;margin-top:60px;}
+        .sig-line{border-top:1px solid #333;width:200px;text-align:center;padding-top:6px;font-size:13px;}
+        .print-btn{display:block;margin:0 auto 30px;padding:10px 24px;background:#4f46e5;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-family:Arial,sans-serif;}
+        @media print { .print-btn{display:none;} body{margin:0;padding:20px;} }
+    </style>
+</head>
+<body>
+<button class="print-btn" onclick="window.print()">🖨️ Print / Save as PDF</button>
+
+<h1>Residential Rent Agreement</h1>
+<p class="subtitle">Generated on <span th:text="${a.generatedDate}">—</span> via SAMS</p>
+
+<div class="section">
+    <h3>Parties</h3>
+    <div class="row"><span><strong>Landlord / Owner:</strong></span><span th:text="${a.landlordName}">—</span></div>
+    <div class="row"><span><strong>Tenant:</strong></span><span th:text="${a.tenantName}">—</span></div>
+    <div class="row"><span><strong>Apartment:</strong></span><span th:text="${a.apartmentNumber}">—</span></div>
+    <div class="row" th:if="${a.tenantPhone != null}"><span><strong>Tenant Phone:</strong></span><span th:text="${a.tenantPhone}">—</span></div>
+    <div class="row" th:if="${a.tenantEmail != null}"><span><strong>Tenant Email:</strong></span><span th:text="${a.tenantEmail}">—</span></div>
+</div>
+
+<div class="section">
+    <h3>Lease Terms</h3>
+    <div class="row"><span><strong>Lease Period:</strong></span><span th:text="${a.leaseStartDate} + ' to ' + ${a.leaseEndDate}">—</span></div>
+    <div class="row"><span><strong>Monthly Rent:</strong></span><span th:text="'₹' + ${a.monthlyRent}">—</span></div>
+    <div class="row"><span><strong>Security Deposit:</strong></span><span th:text="'₹' + ${a.securityDeposit}">—</span></div>
+    <div class="row"><span><strong>Rent Due Date:</strong></span><span th:text="${a.paymentDueDay}">—</span></div>
+    <div class="row"><span><strong>Notice Period:</strong></span><span th:text="${a.noticePeriod}">—</span></div>
+</div>
+
+<div class="section" th:if="${a.specialTerms != null and !#strings.isEmpty(a.specialTerms)}">
+    <h3>Special Terms & Conditions</h3>
+    <p class="terms" th:text="${a.specialTerms}">—</p>
+</div>
+
+<div class="section">
+    <h3>General Terms</h3>
+    <p class="terms">1. The tenant agrees to pay the monthly rent on or before the due date specified above.
+        2. The security deposit shall be refunded at the end of the tenancy, subject to deductions for damages, if any.
+        3. Either party must provide written notice as per the notice period above before terminating this agreement.
+        4. The tenant shall maintain the property in good condition and report any damages promptly.
+        5. This agreement is governed by applicable local rental laws.</p>
+</div>
+
+<div class="signature-block">
+    <div class="sig-line">Landlord Signature</div>
+    <div class="sig-line">Tenant Signature</div>
+</div>
+</body>
+</html>

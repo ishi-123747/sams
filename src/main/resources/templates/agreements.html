@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <script th:src="@{/js/theme.js}"></script>
+    <meta charset="UTF-8">
+    <title>Rent Agreements | SAMS</title>
+    <link rel="stylesheet" th:href="@{/css/sams-global.css}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:var(--modal-overlay);z-index:1000;justify-content:center;align-items:center;}
+        .modal-overlay.active{display:flex;}
+        .modal{background:var(--surface-bg);color:var(--text-body);border-radius:12px;padding:30px;width:480px;max-width:90%;max-height:90vh;overflow-y:auto;}
+        .modal h2{margin-bottom:20px;color:var(--text-heading);}
+        .modal input,.modal select,.modal textarea{width:100%;padding:10px;margin-bottom:12px;border:1px solid var(--input-border);border-radius:8px;font-size:14px;box-sizing:border-box;background:var(--surface-bg);color:var(--text-body);}
+        .modal textarea{height:70px;resize:vertical;}
+        .modal-btns{display:flex;gap:10px;justify-content:flex-end;margin-top:10px;}
+        .btn-cancel{padding:10px 20px;border:1px solid var(--input-border);border-radius:8px;background:var(--surface-bg);color:var(--text-body);cursor:pointer;}
+        .btn-save{padding:10px 20px;border:none;border-radius:8px;background:#4f46e5;color:#fff;cursor:pointer;}
+        table{width:100%;border-collapse:collapse;}
+        th,td{padding:12px;text-align:left;border-bottom:1px solid var(--input-border);font-size:13px;}
+        th{color:var(--text-muted);font-weight:600;}
+        .badge{padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;}
+        .active{background:#dcfce7;color:#16a34a;}
+        .expired{background:#fee2e2;color:#dc2626;}
+        .draft{background:#fef9c3;color:#ca8a04;}
+        .terminated{background:#f3f4f6;color:#6b7280;}
+        .btn-view{background:#ede9fe;color:#4f46e5;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;text-decoration:none;}
+        .btn-term{background:#fee2e2;color:#dc2626;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;font-size:12px;}
+        .btn-del{background:#f3f4f6;color:#6b7280;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;font-size:12px;}
+    </style>
+</head>
+<body>
+<div class="container">
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+    <main class="main-content">
+        <div class="topbar">
+            <div><h1>📄 Rent Agreements</h1><p>Generate and manage digital lease agreements</p></div>
+            <button class="add-btn" onclick="document.getElementById('addModal').classList.add('active')">
+                <i class="fas fa-plus"></i> Generate Agreement
+            </button>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card"><i class="fas fa-file-contract"></i><div><h2 th:text="${totalCount}">0</h2><p>Total Agreements</p></div></div>
+            <div class="stat-card"><i class="fas fa-check-circle"></i><div><h2 th:text="${activeCount}">0</h2><p>Active</p></div></div>
+            <div class="stat-card"><i class="fas fa-times-circle"></i><div><h2 th:text="${expiredCount}">0</h2><p>Expired</p></div></div>
+        </div>
+
+        <div th:if="${#lists.isEmpty(agreements)}" style="text-align:center;padding:60px;color:var(--text-muted);">
+            <i class="fas fa-file-contract" style="font-size:48px;display:block;margin-bottom:16px;opacity:0.2;"></i>
+            No agreements generated yet. Click <strong>Generate Agreement</strong> to create one.
+        </div>
+
+        <div style="background:var(--surface-bg);border-radius:14px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,0.08);" th:if="${!#lists.isEmpty(agreements)}">
+            <table>
+                <thead>
+                <tr><th>Tenant</th><th>Apt</th><th>Rent</th><th>Deposit</th><th>Lease Period</th><th>Status</th><th>Actions</th></tr>
+                </thead>
+                <tbody>
+                <tr th:each="a : ${agreements}">
+                    <td th:text="${a.tenantName}">—</td>
+                    <td th:text="${a.apartmentNumber}">—</td>
+                    <td th:text="'₹' + ${a.monthlyRent}">—</td>
+                    <td th:text="'₹' + ${a.securityDeposit}">—</td>
+                    <td th:text="${a.leaseStartDate} + ' to ' + ${a.leaseEndDate}">—</td>
+                    <td><span class="badge" th:classappend="${#strings.toLowerCase(a.status)}" th:text="${a.status}">—</span></td>
+                    <td style="display:flex;gap:6px;">
+                        <a th:href="@{/agreements/view/{id}(id=${a.id})}" class="btn-view" target="_blank"><i class="fas fa-eye"></i> View</a>
+                        <form th:if="${a.status == 'Active'}" th:action="@{/agreements/terminate/{id}(id=${a.id})}" method="post" onsubmit="return confirm('Terminate this agreement?')">
+                            <button type="submit" class="btn-term"><i class="fas fa-ban"></i></button>
+                        </form>
+                        <form th:action="@{/agreements/delete/{id}(id=${a.id})}" method="post" onsubmit="return confirm('Delete this agreement?')">
+                            <button type="submit" class="btn-del"><i class="fas fa-trash"></i></button>
+                        </form>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+</div>
+
+<!-- Generate Modal -->
+<div class="modal-overlay" id="addModal">
+    <div class="modal">
+        <h2>📄 Generate Rent Agreement</h2>
+        <form th:action="@{/agreements/generate}" method="post">
+            <select name="tenantId" required>
+                <option value="">-- Select Tenant --</option>
+                <option th:each="t : ${tenants}" th:value="${t.id}" th:text="${t.name} + ' — Apt ' + ${t.apartmentNumber}">—</option>
+            </select>
+            <input type="text" name="landlordName" placeholder="Landlord / Owner Name" required>
+            <input type="number" step="0.01" name="monthlyRent" placeholder="Monthly Rent (₹)" required>
+            <input type="number" step="0.01" name="securityDeposit" placeholder="Security Deposit (₹)" required>
+            <input type="date" name="leaseStartDate" required>
+            <input type="date" name="leaseEndDate" required>
+            <select name="paymentDueDay" required>
+                <option value="">-- Rent Due Day --</option>
+                <option value="1st of every month">1st of every month</option>
+                <option value="5th of every month">5th of every month</option>
+                <option value="10th of every month">10th of every month</option>
+            </select>
+            <select name="noticePeriod" required>
+                <option value="">-- Notice Period --</option>
+                <option value="1 month">1 month</option>
+                <option value="2 months">2 months</option>
+                <option value="3 months">3 months</option>
+            </select>
+            <textarea name="specialTerms" placeholder="Special terms / clauses (optional) e.g. no pets, no subletting"></textarea>
+            <div class="modal-btns">
+                <button type="button" class="btn-cancel" onclick="document.getElementById('addModal').classList.remove('active')">Cancel</button>
+                <button type="submit" class="btn-save">Generate</button>
+            </div>
+        </form>
+    </div>
+</div>
+</body>
+</html>

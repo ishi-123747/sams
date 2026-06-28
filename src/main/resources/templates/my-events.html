@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <script th:src="@{/js/theme.js}"></script>
+    <meta charset="UTF-8">
+    <title>Society Events | SAMS</title>
+    <link rel="stylesheet" th:href="@{/css/sams-global.css}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .event-card{background:var(--surface-bg);border-radius:14px;padding:22px;box-shadow:0 2px 8px rgba(0,0,0,0.08);margin-bottom:16px;}
+        .event-title{font-size:17px;font-weight:700;color:var(--text-heading);}
+        .event-meta{font-size:13px;color:var(--text-muted);margin-top:4px;}
+        .event-desc{font-size:13px;color:var(--text-muted);margin-top:10px;}
+        .rsvp-form{display:flex;gap:10px;align-items:center;margin-top:16px;flex-wrap:wrap;}
+        .rsvp-btn{padding:8px 18px;border-radius:8px;border:2px solid var(--input-border);background:var(--surface-bg);color:var(--text-body);cursor:pointer;font-size:13px;font-weight:600;}
+        .rsvp-btn.going{border-color:#16a34a;}
+        .rsvp-btn.maybe{border-color:#ca8a04;}
+        .rsvp-btn.notgoing{border-color:#dc2626;}
+        .rsvp-btn.selected.going{background:#dcfce7;color:#16a34a;}
+        .rsvp-btn.selected.maybe{background:#fef9c3;color:#ca8a04;}
+        .rsvp-btn.selected.notgoing{background:#fee2e2;color:#dc2626;}
+        .guest-input{width:70px;padding:8px;border:1px solid var(--input-border);border-radius:8px;background:var(--surface-bg);color:var(--text-body);}
+        .current-status{font-size:12px;color:var(--text-muted);margin-top:8px;}
+    </style>
+</head>
+<body>
+<div class="container">
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+    <main class="main-content">
+        <div class="topbar">
+            <div><h1>🎉 Society Events</h1><p>RSVP to upcoming events in your community</p></div>
+        </div>
+
+        <div th:if="${#lists.isEmpty(events)}" style="text-align:center;padding:60px;color:var(--text-muted);">
+            <i class="fas fa-calendar-alt" style="font-size:48px;display:block;margin-bottom:16px;opacity:0.2;"></i>
+            No upcoming events right now.
+        </div>
+
+        <div th:each="e : ${events}" class="event-card">
+            <div class="event-title" th:text="${e.title}">—</div>
+            <div class="event-meta">
+                <i class="fas fa-calendar"></i> <span th:text="${e.eventDate}">—</span>
+                <span th:if="${e.eventTime != null}"> at <span th:text="${e.eventTime}">—</span></span>
+                · <i class="fas fa-map-marker-alt"></i> <span th:text="${e.venue}">—</span>
+            </div>
+            <div class="event-desc" th:if="${e.description != null}" th:text="${e.description}">—</div>
+
+            <form th:action="@{/my-events/rsvp}" method="post" class="rsvp-form">
+                <input type="hidden" name="eventId" th:value="${e.id}">
+                <input type="hidden" name="response" th:id="'resp-' + ${e.id}" value="">
+                <button type="button" class="rsvp-btn going" th:classappend="${myResponses.get(e.id) == 'Going'} ? 'selected'"
+                        th:onclick="'selectRsvp(' + ${e.id} + ', \'Going\', this)'">✓ Going</button>
+                <button type="button" class="rsvp-btn maybe" th:classappend="${myResponses.get(e.id) == 'Maybe'} ? 'selected'"
+                        th:onclick="'selectRsvp(' + ${e.id} + ', \'Maybe\', this)'">? Maybe</button>
+                <button type="button" class="rsvp-btn notgoing" th:classappend="${myResponses.get(e.id) == 'NotGoing'} ? 'selected'"
+                        th:onclick="'selectRsvp(' + ${e.id} + ', \'NotGoing\', this)'">✗ Not Going</button>
+                <input type="number" name="guestCount" class="guest-input" placeholder="Guests" min="0" value="0">
+                <button type="submit" class="rsvp-btn" style="border-color:#4f46e5;color:#4f46e5;">Submit RSVP</button>
+            </form>
+            <div class="current-status" th:if="${myResponses.get(e.id) != null}">
+                Your current response: <strong th:text="${myResponses.get(e.id)}">—</strong>
+            </div>
+        </div>
+    </main>
+</div>
+<script>
+    function selectRsvp(eventId, response, btn) {
+        document.getElementById('resp-' + eventId).value = response;
+        btn.closest('.rsvp-form').querySelectorAll('.rsvp-btn').forEach(b => {
+            if (b.classList.contains('going') || b.classList.contains('maybe') || b.classList.contains('notgoing')) {
+                b.classList.remove('selected');
+            }
+        });
+        btn.classList.add('selected');
+    }
+</script>
+</body>
+</html>

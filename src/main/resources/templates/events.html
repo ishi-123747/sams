@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <script th:src="@{/js/theme.js}"></script>
+    <meta charset="UTF-8">
+    <title>Events | SAMS</title>
+    <link rel="stylesheet" th:href="@{/css/sams-global.css}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:var(--modal-overlay);z-index:1000;justify-content:center;align-items:center;}
+        .modal-overlay.active{display:flex;}
+        .modal{background:var(--surface-bg);color:var(--text-body);border-radius:12px;padding:30px;width:460px;max-width:90%;max-height:90vh;overflow-y:auto;}
+        .modal h2{margin-bottom:20px;color:var(--text-heading);}
+        .modal input,.modal select,.modal textarea{width:100%;padding:10px;margin-bottom:12px;border:1px solid var(--input-border);border-radius:8px;font-size:14px;box-sizing:border-box;background:var(--surface-bg);color:var(--text-body);}
+        .modal textarea{height:70px;resize:vertical;}
+        .modal-btns{display:flex;gap:10px;justify-content:flex-end;margin-top:10px;}
+        .btn-cancel{padding:10px 20px;border:1px solid var(--input-border);border-radius:8px;background:var(--surface-bg);color:var(--text-body);cursor:pointer;}
+        .btn-save{padding:10px 20px;border:none;border-radius:8px;background:#4f46e5;color:#fff;cursor:pointer;}
+        .event-card{background:var(--surface-bg);border-radius:14px;padding:22px;box-shadow:0 2px 8px rgba(0,0,0,0.08);margin-bottom:16px;}
+        .event-top{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;}
+        .event-title{font-size:17px;font-weight:700;color:var(--text-heading);}
+        .event-meta{font-size:13px;color:var(--text-muted);margin-top:4px;}
+        .event-desc{font-size:13px;color:var(--text-muted);margin-top:10px;}
+        .badge{padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;}
+        .upcoming{background:#dbeafe;color:#1d4ed8;}
+        .completed{background:#dcfce7;color:#16a34a;}
+        .cancelled{background:#fee2e2;color:#dc2626;}
+        .rsvp-summary{display:flex;gap:16px;margin-top:14px;flex-wrap:wrap;}
+        .rsvp-pill{padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;}
+        .going-pill{background:#dcfce7;color:#16a34a;}
+        .maybe-pill{background:#fef9c3;color:#ca8a04;}
+        .notgoing-pill{background:#fee2e2;color:#dc2626;}
+        .event-actions{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;}
+        .btn-rsvps{background:#ede9fe;color:#4f46e5;border:none;padding:7px 14px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;text-decoration:none;}
+        .btn-complete{background:#dcfce7;color:#16a34a;border:none;padding:7px 14px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;}
+        .btn-cancel-ev{background:#fee2e2;color:#dc2626;border:none;padding:7px 14px;border-radius:8px;cursor:pointer;font-size:12px;}
+        .btn-del{background:#f3f4f6;color:#6b7280;border:none;padding:7px 12px;border-radius:8px;cursor:pointer;font-size:12px;}
+    </style>
+</head>
+<body>
+<div class="container">
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+    <main class="main-content">
+        <div class="topbar">
+            <div><h1>🎉 Society Events</h1><p>Create events and track RSVPs</p></div>
+            <button class="add-btn" onclick="document.getElementById('addModal').classList.add('active')">
+                <i class="fas fa-plus"></i> Create Event
+            </button>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card"><i class="fas fa-calendar-alt"></i><div><h2 th:text="${totalCount}">0</h2><p>Total Events</p></div></div>
+            <div class="stat-card"><i class="fas fa-clock"></i><div><h2 th:text="${upcomingCount}">0</h2><p>Upcoming</p></div></div>
+        </div>
+
+        <div th:if="${#lists.isEmpty(events)}" style="text-align:center;padding:60px;color:var(--text-muted);">
+            <i class="fas fa-calendar-alt" style="font-size:48px;display:block;margin-bottom:16px;opacity:0.2;"></i>
+            No events created yet. Click <strong>Create Event</strong> to get started.
+        </div>
+
+        <div th:each="e : ${events}" class="event-card">
+            <div class="event-top">
+                <div>
+                    <div class="event-title" th:text="${e.title}">—</div>
+                    <div class="event-meta">
+                        <i class="fas fa-calendar"></i> <span th:text="${e.eventDate}">—</span>
+                        <span th:if="${e.eventTime != null}"> at <span th:text="${e.eventTime}">—</span></span>
+                        · <i class="fas fa-map-marker-alt"></i> <span th:text="${e.venue}">—</span>
+                    </div>
+                </div>
+                <span class="badge" th:classappend="${#strings.toLowerCase(e.status)}" th:text="${e.status}">—</span>
+            </div>
+            <div class="event-desc" th:if="${e.description != null}" th:text="${e.description}">—</div>
+
+            <div class="rsvp-summary">
+                <span class="rsvp-pill going-pill">✓ Going: <span th:text="${goingMap.get(e.id)}">0</span></span>
+                <span class="rsvp-pill maybe-pill">? Maybe: <span th:text="${maybeMap.get(e.id)}">0</span></span>
+                <span class="rsvp-pill notgoing-pill">✗ Not Going: <span th:text="${notGoingMap.get(e.id)}">0</span></span>
+            </div>
+
+            <div class="event-actions">
+                <a th:href="@{/events/rsvps/{id}(id=${e.id})}" class="btn-rsvps"><i class="fas fa-list"></i> View RSVPs</a>
+                <form th:if="${e.status == 'Upcoming'}" th:action="@{/events/complete/{id}(id=${e.id})}" method="post">
+                    <button type="submit" class="btn-complete"><i class="fas fa-check"></i> Mark Completed</button>
+                </form>
+                <form th:if="${e.status == 'Upcoming'}" th:action="@{/events/cancel/{id}(id=${e.id})}" method="post" onsubmit="return confirm('Cancel this event?')">
+                    <button type="submit" class="btn-cancel-ev"><i class="fas fa-ban"></i> Cancel</button>
+                </form>
+                <form th:action="@{/events/delete/{id}(id=${e.id})}" method="post" onsubmit="return confirm('Delete this event permanently?')">
+                    <button type="submit" class="btn-del"><i class="fas fa-trash"></i></button>
+                </form>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- Add Modal -->
+<div class="modal-overlay" id="addModal">
+    <div class="modal">
+        <h2>🎉 Create Event</h2>
+        <form th:action="@{/events/add}" method="post">
+            <input type="text" name="title" placeholder="Event Title (e.g. Diwali Celebration)" required>
+            <select name="category">
+                <option value="Festival">🎊 Festival</option>
+                <option value="Meeting">📋 AGM / Meeting</option>
+                <option value="Social">🤝 Social Gathering</option>
+                <option value="Charity">❤️ Charity / Drive</option>
+                <option value="Sports">⚽ Sports</option>
+                <option value="Other">Other</option>
+            </select>
+            <input type="date" name="eventDate" required>
+            <input type="time" name="eventTime">
+            <input type="text" name="venue" placeholder="Venue (e.g. Clubhouse, Terrace)" required>
+            <textarea name="description" placeholder="Description (optional)"></textarea>
+            <div class="modal-btns">
+                <button type="button" class="btn-cancel" onclick="document.getElementById('addModal').classList.remove('active')">Cancel</button>
+                <button type="submit" class="btn-save">Create</button>
+            </div>
+        </form>
+    </div>
+</div>
+</body>
+</html>

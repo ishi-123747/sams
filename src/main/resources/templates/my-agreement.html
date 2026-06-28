@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <script th:src="@{/js/theme.js}"></script>
+    <meta charset="UTF-8">
+    <title>My Agreement | SAMS</title>
+    <link rel="stylesheet" th:href="@{/css/sams-global.css}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .page-box{background:var(--surface-bg);border-radius:14px;padding:28px;box-shadow:0 2px 8px rgba(0,0,0,0.08);margin-bottom:20px;}
+        .agreement-row{display:flex;justify-content:space-between;align-items:center;padding:16px 0;border-bottom:1px solid var(--input-border);flex-wrap:wrap;gap:10px;}
+        .agreement-row:last-child{border-bottom:none;}
+        .ag-name{font-weight:700;color:var(--text-heading);font-size:14px;}
+        .ag-meta{font-size:12px;color:var(--text-muted);margin-top:3px;}
+        .badge{padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;}
+        .active{background:#dcfce7;color:#16a34a;}
+        .expired{background:#fee2e2;color:#dc2626;}
+        .terminated{background:#f3f4f6;color:#6b7280;}
+        .btn-view{background:#4f46e5;color:#fff;border:none;padding:8px 16px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;text-decoration:none;}
+    </style>
+</head>
+<body>
+<div class="container">
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+    <main class="main-content">
+        <div class="topbar">
+            <div><h1>📄 My Rent Agreement</h1><p>View and download your lease agreement</p></div>
+        </div>
+
+        <div class="page-box">
+            <div th:if="${#lists.isEmpty(myAgreements)}" style="text-align:center;padding:30px;color:var(--text-muted);">
+                <i class="fas fa-file-contract" style="font-size:40px;display:block;margin-bottom:14px;opacity:0.2;"></i>
+                No agreement on file yet. Contact your admin if you believe this is incorrect.
+            </div>
+            <div th:each="a : ${myAgreements}" class="agreement-row">
+                <div>
+                    <div class="ag-name">Lease: <span th:text="${a.leaseStartDate} + ' to ' + ${a.leaseEndDate}">—</span></div>
+                    <div class="ag-meta">Rent: ₹<span th:text="${a.monthlyRent}">—</span>/month · Deposit: ₹<span th:text="${a.securityDeposit}">—</span></div>
+                </div>
+                <div style="display:flex;align-items:center;gap:12px;">
+                    <span class="badge" th:classappend="${#strings.toLowerCase(a.status)}" th:text="${a.status}">—</span>
+                    <a th:href="@{/agreements/view/{id}(id=${a.id})}" class="btn-view" target="_blank"><i class="fas fa-eye"></i> View / Print</a>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+</body>
+</html>

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <script th:src="@{/js/theme.js}"></script>
+    <meta charset="UTF-8">
+    <title>Event RSVPs | SAMS</title>
+    <link rel="stylesheet" th:href="@{/css/sams-global.css}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        table{width:100%;border-collapse:collapse;}
+        th,td{padding:12px;text-align:left;border-bottom:1px solid var(--input-border);font-size:14px;}
+        th{color:var(--text-muted);font-weight:600;}
+        .badge{padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;}
+        .going{background:#dcfce7;color:#16a34a;}
+        .maybe{background:#fef9c3;color:#ca8a04;}
+        .notgoing{background:#fee2e2;color:#dc2626;}
+        .back-link{display:inline-block;margin-bottom:16px;color:#4f46e5;text-decoration:none;font-size:14px;}
+    </style>
+</head>
+<body>
+<div class="container">
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+    <main class="main-content">
+        <a th:href="@{/events}" class="back-link"><i class="fas fa-arrow-left"></i> Back to Events</a>
+        <div class="topbar">
+            <div><h1>📋 RSVPs — <span th:text="${event.title}">—</span></h1><p th:text="${event.eventDate} + ' · ' + ${event.venue}">—</p></div>
+        </div>
+
+        <div th:if="${#lists.isEmpty(rsvps)}" style="text-align:center;padding:40px;color:var(--text-muted);">No RSVPs yet.</div>
+        <div style="background:var(--surface-bg);border-radius:14px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,0.08);" th:if="${!#lists.isEmpty(rsvps)}">
+            <table>
+                <thead><tr><th>Tenant</th><th>Apt</th><th>Response</th><th>Guests</th><th>Responded On</th></tr></thead>
+                <tbody>
+                <tr th:each="r : ${rsvps}">
+                    <td th:text="${r.tenantName}">—</td>
+                    <td th:text="${r.apartmentNumber}">—</td>
+                    <td><span class="badge" th:classappend="${#strings.toLowerCase(r.response)}" th:text="${r.response}">—</span></td>
+                    <td th:text="${r.guestCount}">0</td>
+                    <td th:text="${r.respondedDate}">—</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+</div>
+</body>
+</html>
