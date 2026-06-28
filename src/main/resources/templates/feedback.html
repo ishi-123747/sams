@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <script th:src="@{/js/theme.js}"></script>
+    <meta charset="UTF-8">
+    <title>Feedback | SAMS</title>
+    <link rel="stylesheet" th:href="@{/css/sams-global.css}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .star{color:#f59e0b;font-size:14px;}
+        .star-empty{color:#e5e7eb;font-size:14px;}
+        .feedback-card{background:var(--surface-bg);border-radius:12px;padding:20px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,0.06);}
+        .feedback-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;}
+        .feedback-meta{font-size:13px;color:var(--text-muted);}
+        .category-badge{padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600;background:#ede9fe;color:#4f46e5;}
+        .rating-big{font-size:48px;font-weight:800;color:#4f46e5;text-align:center;}
+        .stat-row{display:flex;gap:20px;margin-bottom:24px;flex-wrap:wrap;}
+        .stat-box{background:var(--surface-bg);border-radius:12px;padding:20px;flex:1;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.06);min-width:120px;}
+        .stat-box h2{font-size:28px;font-weight:700;color:var(--text-heading);margin:0;}
+        .stat-box p{color:var(--text-muted);font-size:13px;margin:4px 0 0;}
+        .btn-delete-row{background:#fee2e2;color:#dc2626;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;font-size:12px;}
+    </style>
+</head>
+<body>
+<div class="container">
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+    <main class="main-content">
+        <div class="topbar">
+            <div>
+                <h1>⭐ Tenant Feedback</h1>
+                <p>View all tenant ratings and reviews</p>
+            </div>
+        </div>
+
+        <div class="stat-row">
+            <div class="stat-box">
+                <div class="rating-big" th:text="${avgRating}">0.0</div>
+                <div style="color:#f59e0b;font-size:20px;margin:4px 0;">★★★★★</div>
+                <p>Average Rating</p>
+            </div>
+            <div class="stat-box">
+                <h2 th:text="${totalCount}">0</h2>
+                <p>Total Reviews</p>
+            </div>
+            <div class="stat-box">
+                <h2 th:text="${fiveStars}">0</h2>
+                <p>⭐⭐⭐⭐⭐ Reviews</p>
+            </div>
+            <div class="stat-box">
+                <h2 th:text="${fourStars}">0</h2>
+                <p>⭐⭐⭐⭐ Reviews</p>
+            </div>
+            <div class="stat-box">
+                <h2 th:text="${threeStars}">0</h2>
+                <p>⭐⭐⭐ and below</p>
+            </div>
+        </div>
+
+        <div th:if="${#lists.isEmpty(feedbacks)}" style="text-align:center;padding:60px;color:var(--text-muted);">
+            <i class="fas fa-star" style="font-size:48px;display:block;margin-bottom:16px;opacity:0.2;"></i>
+            No feedback received yet.
+        </div>
+
+        <div th:each="f : ${feedbacks}" class="feedback-card">
+            <div class="feedback-header">
+                <div>
+                    <strong th:text="${f.tenantName}">Name</strong>
+                    <span style="color:var(--text-muted);font-size:13px;" th:text="' · Apt ' + ${f.apartmentNumber}">—</span>
+                    <div style="margin-top:4px;">
+                        <span th:each="i : ${#numbers.sequence(1, f.rating)}" class="star">★</span>
+                        <span th:each="i : ${#numbers.sequence(f.rating + 1, 5)}" class="star-empty">★</span>
+                    </div>
+                </div>
+                <div style="display:flex;gap:8px;align-items:center;">
+                    <span class="category-badge" th:text="${f.category}">—</span>
+                    <span class="feedback-meta" th:text="${f.createdDate}">—</span>
+                    <form th:action="@{/feedback/delete/{id}(id=${f.id})}" method="post" style="display:inline;">
+                        <button type="submit" class="btn-delete-row" onclick="return confirm('Delete this feedback?')">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+            <p style="color:var(--text-body);font-size:14px;margin:0;" th:text="${f.comment}">—</p>
+        </div>
+    </main>
+</div>
+</body>
+</html>

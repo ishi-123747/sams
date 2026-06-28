@@ -28,6 +28,9 @@
             <li th:classappend="${activePage == 'complaints'} ? 'active'">
                 <a th:href="@{/complaints}"><i class="fas fa-tools"></i> Complaints</a>
             </li>
+            <li th:classappend="${activePage == 'feedback'} ? 'active'">
+                <a th:href="@{/feedback}"><i class="fas fa-star"></i> Feedback</a>
+            </li>
             <li th:classappend="${activePage == 'maintenance'} ? 'active'">
                 <a th:href="@{/maintenance}"><i class="fas fa-wrench"></i> Maintenance</a>
             </li>
@@ -66,6 +69,9 @@
             </li>
             <li th:classappend="${activePage == 'complaints'} ? 'active'">
                 <a th:href="@{/my-complaints}"><i class="fas fa-tools"></i> My Complaints</a>
+            </li>
+            <li th:classappend="${activePage == 'feedback'} ? 'active'">
+                <a th:href="@{/my-feedback}"><i class="fas fa-star"></i> My Feedback</a>
             </li>
             <li>
                 <a th:href="@{/logout}"><i class="fas fa-sign-out-alt"></i> Logout</a>

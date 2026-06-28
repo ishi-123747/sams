@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <script th:src="@{/js/theme.js}"></script>
+    <meta charset="UTF-8">
+    <title>My Feedback | SAMS</title>
+    <link rel="stylesheet" th:href="@{/css/sams-global.css}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .page-box{background:var(--surface-bg);border-radius:14px;padding:28px;box-shadow:0 2px 8px rgba(0,0,0,0.08);margin-bottom:24px;}
+        .page-box h3{margin:0 0 18px;color:var(--text-heading);font-size:16px;}
+        .star-select{display:flex;gap:8px;margin-bottom:16px;}
+        .star-select input[type=radio]{display:none;}
+        .star-select label{font-size:32px;color:#e5e7eb;cursor:pointer;transition:color 0.2s;}
+        .star-select input[type=radio]:checked ~ label,
+        .star-select label:hover,
+        .star-select label:hover ~ label{color:#f59e0b;}
+        .star-select{flex-direction:row-reverse;justify-content:flex-end;}
+        .star-select label:hover,
+        .star-select label:hover ~ label{color:#f59e0b;}
+        .feedback-form select,.feedback-form textarea{width:100%;padding:10px;border:1px solid var(--input-border);border-radius:8px;font-size:14px;background:var(--surface-bg);color:var(--text-body);box-sizing:border-box;margin-bottom:12px;}
+        .feedback-form textarea{height:100px;resize:vertical;}
+        .submit-btn{padding:10px 24px;background:#4f46e5;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600;}
+        .feedback-item{padding:14px 0;border-bottom:1px solid var(--input-border);}
+        .feedback-item:last-child{border-bottom:none;}
+        .star{color:#f59e0b;}
+        .star-empty{color:#e5e7eb;}
+    </style>
+</head>
+<body>
+<div class="container">
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+    <main class="main-content">
+        <div class="topbar">
+            <div>
+                <h1>⭐ My Feedback</h1>
+                <p>Share your experience and rate our services</p>
+            </div>
+        </div>
+
+        <div class="page-box">
+            <h3><i class="fas fa-star" style="color:#f59e0b;margin-right:8px;"></i>Submit Feedback</h3>
+            <form th:action="@{/my-feedback/submit}" method="post" class="feedback-form">
+                <label style="font-size:13px;color:var(--text-muted);margin-bottom:8px;display:block;">Your Rating</label>
+                <div class="star-select">
+                    <input type="radio" name="rating" id="s5" value="5" required>
+                    <label for="s5">★</label>
+                    <input type="radio" name="rating" id="s4" value="4">
+                    <label for="s4">★</label>
+                    <input type="radio" name="rating" id="s3" value="3">
+                    <label for="s3">★</label>
+                    <input type="radio" name="rating" id="s2" value="2">
+                    <label for="s2">★</label>
+                    <input type="radio" name="rating" id="s1" value="1">
+                    <label for="s1">★</label>
+                </div>
+                <select name="category" required>
+                    <option value="">-- Category --</option>
+                    <option value="Maintenance">Maintenance</option>
+                    <option value="Cleanliness">Cleanliness</option>
+                    <option value="Security">Security</option>
+                    <option value="Management">Management</option>
+                    <option value="Amenities">Amenities</option>
+                    <option value="General">General</option>
+                </select>
+                <textarea name="comment" placeholder="Share your experience..."></textarea>
+                <button type="submit" class="submit-btn">
+                    <i class="fas fa-paper-plane"></i> Submit Feedback
+                </button>
+            </form>
+        </div>
+
+        <div class="page-box">
+            <h3><i class="fas fa-history" style="color:#4f46e5;margin-right:8px;"></i>My Previous Feedback</h3>
+            <div th:if="${#lists.isEmpty(myFeedbacks)}" style="text-align:center;padding:20px;color:var(--text-muted);">
+                No feedback submitted yet.
+            </div>
+            <div th:each="f : ${myFeedbacks}" class="feedback-item">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                    <div>
+                        <span th:each="i : ${#numbers.sequence(1, f.rating)}" class="star">★</span>
+                        <span th:each="i : ${#numbers.sequence(f.rating + 1, 5)}" class="star-empty">★</span>
+                        <span style="margin-left:8px;background:#ede9fe;color:#4f46e5;padding:2px 8px;border-radius:12px;font-size:12px;" th:text="${f.category}">—</span>
+                    </div>
+                    <span style="font-size:12px;color:var(--text-muted);" th:text="${f.createdDate}">—</span>
+                </div>
+                <p style="margin:0;font-size:14px;color:var(--text-body);" th:text="${f.comment}">—</p>
+            </div>
+        </div>
+
+    </main>
+</div>
+</body>
+</html>
