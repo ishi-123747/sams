@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <script th:src="@{/js/theme.js}"></script>
+    <meta charset="UTF-8">
+    <title>Lost & Found | SAMS</title>
+    <link rel="stylesheet" th:href="@{/css/sams-global.css}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:var(--modal-overlay);z-index:1000;justify-content:center;align-items:center;}
+        .modal-overlay.active{display:flex;}
+        .modal{background:var(--surface-bg);color:var(--text-body);border-radius:12px;padding:30px;width:450px;max-width:90%;max-height:90vh;overflow-y:auto;}
+        .modal h2{margin-bottom:20px;color:var(--text-heading);}
+        .modal input,.modal select,.modal textarea{width:100%;padding:10px;margin-bottom:12px;border:1px solid var(--input-border);border-radius:8px;font-size:14px;box-sizing:border-box;background:var(--surface-bg);color:var(--text-body);}
+        .modal textarea{height:80px;resize:vertical;}
+        .modal-btns{display:flex;gap:10px;justify-content:flex-end;margin-top:10px;}
+        .btn-cancel{padding:10px 20px;border:1px solid var(--input-border);border-radius:8px;background:var(--surface-bg);color:var(--text-body);cursor:pointer;}
+        .btn-save{padding:10px 20px;border:none;border-radius:8px;background:#4f46e5;color:#fff;cursor:pointer;}
+        .board-tabs{display:flex;gap:12px;margin-bottom:24px;}
+        .tab-btn{padding:10px 24px;border-radius:10px;border:2px solid var(--input-border);background:var(--surface-bg);color:var(--text-muted);font-weight:600;cursor:pointer;font-size:14px;transition:all 0.2s;}
+        .tab-btn.active{border-color:#4f46e5;background:#ede9fe;color:#4f46e5;}
+        .board-section{display:none;}
+        .board-section.active{display:block;}
+        .item-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;}
+        .item-card{background:var(--surface-bg);border-radius:12px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,0.08);border-top:4px solid #e5e7eb;position:relative;}
+        .item-card.lost{border-top-color:#dc2626;}
+        .item-card.found{border-top-color:#16a34a;}
+        .item-card.resolved{border-top-color:#9ca3af;opacity:0.7;}
+        .item-type{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;}
+        .lost .item-type{color:#dc2626;}
+        .found .item-type{color:#16a34a;}
+        .item-name{font-size:16px;font-weight:700;color:var(--text-heading);margin-bottom:6px;}
+        .item-desc{font-size:13px;color:var(--text-muted);margin-bottom:10px;}
+        .item-meta{font-size:12px;color:var(--text-muted);display:flex;flex-direction:column;gap:3px;}
+        .item-meta span{display:flex;align-items:center;gap:6px;}
+        .item-actions{display:flex;gap:6px;margin-top:14px;flex-wrap:wrap;}
+        .btn-resolve{background:#dcfce7;color:#16a34a;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;}
+        .btn-del{background:#fee2e2;color:#dc2626;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px;}
+        .badge-resolved{background:#f3f4f6;color:#6b7280;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600;}
+        .badge-open-lost{background:#fee2e2;color:#dc2626;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600;}
+        .badge-open-found{background:#dcfce7;color:#16a34a;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600;}
+        .empty-board{text-align:center;padding:60px;color:var(--text-muted);}
+        .empty-board i{font-size:48px;display:block;margin-bottom:16px;opacity:0.2;}
+        .report-btn{display:inline-flex;align-items:center;gap:8px;padding:10px 20px;background:#4f46e5;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;}
+    </style>
+</head>
+<body>
+<div class="container">
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+    <main class="main-content">
+        <div class="topbar">
+            <div>
+                <h1>🔍 Lost & Found Board</h1>
+                <p>Report lost items or post found items for residents</p>
+            </div>
+            <button class="report-btn" onclick="document.getElementById('addModal').classList.add('active')">
+                <i class="fas fa-plus"></i> Report Item
+            </button>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card"><i class="fas fa-search" style="color:#dc2626;"></i><div><h2 th:text="${lostCount}">0</h2><p>Lost Items</p></div></div>
+            <div class="stat-card"><i class="fas fa-box-open" style="color:#16a34a;"></i><div><h2 th:text="${foundCount}">0</h2><p>Found Items</p></div></div>
+            <div class="stat-card"><i class="fas fa-check-circle" style="color:#4f46e5;"></i><div><h2 th:text="${resolvedCount}">0</h2><p>Resolved</p></div></div>
+        </div>
+
+        <div class="board-tabs">
+            <button class="tab-btn active" onclick="switchTab('all', this)">📋 All Items</button>
+            <button class="tab-btn" onclick="switchTab('lost', this)">🔴 Lost</button>
+            <button class="tab-btn" onclick="switchTab('found', this)">🟢 Found</button>
+        </div>
+
+        <!-- ALL -->
+        <div id="tab-all" class="board-section active">
+            <div th:if="${#lists.isEmpty(items)}" class="empty-board">
+                <i class="fas fa-search"></i>
+                No items reported yet. Click <strong>Report Item</strong> to post.
+            </div>
+            <div class="item-grid">
+                <div th:each="i : ${items}"
+                     class="item-card"
+                     th:classappend="${i.status == 'Resolved'} ? 'resolved' : (#strings.toLowerCase(i.type))">
+                    <div class="item-type" th:text="${i.type == 'Lost'} ? '🔴 LOST' : '🟢 FOUND'">—</div>
+                    <div class="item-name" th:text="${i.itemName}">—</div>
+                    <div class="item-desc" th:text="${i.description}">—</div>
+                    <div class="item-meta">
+                        <span><i class="fas fa-map-marker-alt"></i> <span th:text="${i.location}">—</span></span>
+                        <span><i class="fas fa-user"></i> <span th:text="${i.reportedBy}">—</span> · Apt <span th:text="${i.apartmentNumber}">—</span></span>
+                        <span><i class="fas fa-phone"></i> <span th:text="${i.contactPhone}">—</span></span>
+                        <span><i class="fas fa-calendar"></i> <span th:text="${i.reportedDate}">—</span></span>
+                    </div>
+                    <div class="item-actions">
+                        <span th:if="${i.status == 'Resolved'}" class="badge-resolved">✓ Resolved</span>
+                        <span th:if="${i.status != 'Resolved' and i.type == 'Lost'}" class="badge-open-lost">Open</span>
+                        <span th:if="${i.status != 'Resolved' and i.type == 'Found'}" class="badge-open-found">Open</span>
+                        <form th:if="${i.status != 'Resolved'}" th:action="@{/lost-found/resolve/{id}(id=${i.id})}" method="post" style="display:inline;">
+                            <button type="submit" class="btn-resolve"><i class="fas fa-check"></i> Mark Resolved</button>
+                        </form>
+                        <form th:if="${session.role == 'ADMIN'}" th:action="@{/lost-found/delete/{id}(id=${i.id})}" method="post" style="display:inline;" onsubmit="return confirm('Delete?')">
+                            <button type="submit" class="btn-del"><i class="fas fa-trash"></i></button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- LOST -->
+        <div id="tab-lost" class="board-section">
+            <div th:if="${#lists.isEmpty(lostItems)}" class="empty-board">
+                <i class="fas fa-search"></i>
+                No lost items reported.
+            </div>
+            <div class="item-grid">
+                <div th:each="i : ${lostItems}"
+                     class="item-card"
+                     th:classappend="${i.status == 'Resolved'} ? 'resolved' : 'lost'">
+                    <div class="item-type">🔴 LOST</div>
+                    <div class="item-name" th:text="${i.itemName}">—</div>
+                    <div class="item-desc" th:text="${i.description}">—</div>
+                    <div class="item-meta">
+                        <span><i class="fas fa-map-marker-alt"></i> <span th:text="${i.location}">—</span></span>
+                        <span><i class="fas fa-user"></i> <span th:text="${i.reportedBy}">—</span> · Apt <span th:text="${i.apartmentNumber}">—</span></span>
+                        <span><i class="fas fa-phone"></i> <span th:text="${i.contactPhone}">—</span></span>
+                        <span><i class="fas fa-calendar"></i> <span th:text="${i.reportedDate}">—</span></span>
+                    </div>
+                    <div class="item-actions">
+                        <span th:if="${i.status == 'Resolved'}" class="badge-resolved">✓ Resolved</span>
+                        <form th:if="${i.status != 'Resolved'}" th:action="@{/lost-found/resolve/{id}(id=${i.id})}" method="post" style="display:inline;">
+                            <button type="submit" class="btn-resolve"><i class="fas fa-check"></i> Mark Resolved</button>
+                        </form>
+                        <form th:if="${session.role == 'ADMIN'}" th:action="@{/lost-found/delete/{id}(id=${i.id})}" method="post" style="display:inline;" onsubmit="return confirm('Delete?')">
+                            <button type="submit" class="btn-del"><i class="fas fa-trash"></i></button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- FOUND -->
+        <div id="tab-found" class="board-section">
+            <div th:if="${#lists.isEmpty(foundItems)}" class="empty-board">
+                <i class="fas fa-box-open"></i>
+                No found items reported.
+            </div>
+            <div class="item-grid">
+                <div th:each="i : ${foundItems}"
+                     class="item-card"
+                     th:classappend="${i.status == 'Resolved'} ? 'resolved' : 'found'">
+                    <div class="item-type">🟢 FOUND</div>
+                    <div class="item-name" th:text="${i.itemName}">—</div>
+                    <div class="item-desc" th:text="${i.description}">—</div>
+                    <div class="item-meta">
+                        <span><i class="fas fa-map-marker-alt"></i> <span th:text="${i.location}">—</span></span>
+                        <span><i class="fas fa-user"></i> <span th:text="${i.reportedBy}">—</span> · Apt <span th:text="${i.apartmentNumber}">—</span></span>
+                        <span><i class="fas fa-phone"></i> <span th:text="${i.contactPhone}">—</span></span>
+                        <span><i class="fas fa-calendar"></i> <span th:text="${i.reportedDate}">—</span></span>
+                    </div>
+                    <div class="item-actions">
+                        <span th:if="${i.status == 'Resolved'}" class="badge-resolved">✓ Resolved</span>
+                        <form th:if="${i.status != 'Resolved'}" th:action="@{/lost-found/resolve/{id}(id=${i.id})}" method="post" style="display:inline;">
+                            <button type="submit" class="btn-resolve"><i class="fas fa-check"></i> Mark Resolved</button>
+                        </form>
+                        <form th:if="${session.role == 'ADMIN'}" th:action="@{/lost-found/delete/{id}(id=${i.id})}" method="post" style="display:inline;" onsubmit="return confirm('Delete?')">
+                            <button type="submit" class="btn-del"><i class="fas fa-trash"></i></button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+</div>
+
+<!-- Report Modal -->
+<div class="modal-overlay" id="addModal">
+    <div class="modal">
+        <h2>📋 Report Item</h2>
+        <form th:action="@{/lost-found/add}" method="post">
+            <select name="type" required>
+                <option value="">-- I want to report a... --</option>
+                <option value="Lost">🔴 Lost Item (I lost something)</option>
+                <option value="Found">🟢 Found Item (I found something)</option>
+            </select>
+            <input type="text" name="itemName" placeholder="Item Name (e.g. Black Wallet, Keys)" required>
+            <textarea name="description" placeholder="Describe the item (color, brand, size, any identifiers...)"></textarea>
+            <input type="text" name="location" placeholder="Location (e.g. Near Lift, Parking, Lobby)" required>
+            <input type="tel" name="contactPhone" placeholder="Your Contact Number" required>
+            <div class="modal-btns">
+                <button type="button" class="btn-cancel" onclick="document.getElementById('addModal').classList.remove('active')">Cancel</button>
+                <button type="submit" class="btn-save"><i class="fas fa-paper-plane"></i> Submit</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function switchTab(tab, btn) {
+        document.querySelectorAll('.board-section').forEach(s => s.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('tab-' + tab).classList.add('active');
+        btn.classList.add('active');
+    }
+</script>
+</body>
+</html>

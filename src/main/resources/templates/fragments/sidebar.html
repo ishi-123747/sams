@@ -43,6 +43,9 @@
             <li th:classappend="${activePage == 'emergency-admin'} ? 'active'">
                 <a th:href="@{/emergency-contacts}"><i class="fas fa-phone-alt"></i> Emergency</a>
             </li>
+            <li th:classappend="${activePage == 'lostfound-admin'} ? 'active'">
+                <a th:href="@{/lost-found}"><i class="fas fa-search"></i> Lost & Found</a>
+            </li>
             <li th:classappend="${activePage == 'maintenance'} ? 'active'">
                 <a th:href="@{/maintenance}"><i class="fas fa-wrench"></i> Maintenance</a>
             </li>
@@ -93,6 +96,9 @@
             </li>
             <li th:classappend="${activePage == 'emergency-tenant'} ? 'active'">
                 <a th:href="@{/emergency-contacts}"><i class="fas fa-phone-alt"></i> Emergency</a>
+            </li>
+            <li th:classappend="${activePage == 'lostfound-tenant'} ? 'active'">
+                <a th:href="@{/lost-found}"><i class="fas fa-search"></i> Lost & Found</a>
             </li>
             <li>
                 <a th:href="@{/logout}"><i class="fas fa-sign-out-alt"></i> Logout</a>
