@@ -31,6 +31,9 @@
             <li th:classappend="${activePage == 'feedback'} ? 'active'">
                 <a th:href="@{/feedback}"><i class="fas fa-star"></i> Feedback</a>
             </li>
+            <li th:classappend="${activePage == 'parking'} ? 'active'">
+                <a th:href="@{/parking}"><i class="fas fa-parking"></i> Parking</a>
+            </li>
             <li th:classappend="${activePage == 'maintenance'} ? 'active'">
                 <a th:href="@{/maintenance}"><i class="fas fa-wrench"></i> Maintenance</a>
             </li>

@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <script th:src="@{/js/theme.js}"></script>
+    <meta charset="UTF-8">
+    <title>Parking | SAMS</title>
+    <link rel="stylesheet" th:href="@{/css/sams-global.css}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:var(--modal-overlay);z-index:1000;justify-content:center;align-items:center;}
+        .modal-overlay.active{display:flex;}
+        .modal{background:var(--surface-bg);color:var(--text-body);border-radius:12px;padding:30px;width:450px;max-width:90%;max-height:90vh;overflow-y:auto;}
+        .modal h2{margin-bottom:20px;color:var(--text-heading);}
+        .modal input,.modal select{width:100%;padding:10px;margin-bottom:12px;border:1px solid var(--input-border);border-radius:8px;font-size:14px;box-sizing:border-box;background:var(--surface-bg);color:var(--text-body);}
+        .modal-btns{display:flex;gap:10px;justify-content:flex-end;margin-top:10px;}
+        .btn-cancel{padding:10px 20px;border:1px solid var(--input-border);border-radius:8px;background:var(--surface-bg);color:var(--text-body);cursor:pointer;}
+        .btn-save{padding:10px 20px;border:none;border-radius:8px;background:#4f46e5;color:#fff;cursor:pointer;}
+        .parking-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;margin-top:20px;}
+        .parking-slot{background:var(--surface-bg);border-radius:12px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,0.08);border-left:4px solid #e5e7eb;text-align:center;}
+        .parking-slot.available{border-left-color:#16a34a;}
+        .parking-slot.occupied{border-left-color:#dc2626;}
+        .parking-slot.reserved{border-left-color:#ca8a04;}
+        .slot-number{font-size:24px;font-weight:800;color:var(--text-heading);margin-bottom:8px;}
+        .slot-icon{font-size:32px;margin-bottom:8px;}
+        .slot-info{font-size:12px;color:var(--text-muted);margin-top:4px;}
+        .badge{padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600;display:inline-block;}
+        .available{background:#dcfce7;color:#16a34a;}
+        .occupied{background:#fee2e2;color:#dc2626;}
+        .reserved{background:#fef9c3;color:#ca8a04;}
+        .slot-actions{display:flex;gap:6px;justify-content:center;margin-top:12px;}
+        .btn-edit-sm{background:#ede9fe;color:#4f46e5;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;font-size:12px;}
+        .btn-delete-sm{background:#fee2e2;color:#dc2626;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;font-size:12px;}
+    </style>
+</head>
+<body>
+<div class="container">
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+    <main class="main-content">
+        <div class="topbar">
+            <div>
+                <h1>🚗 Parking Management</h1>
+                <p>Manage parking slots and vehicle assignments</p>
+            </div>
+            <button class="add-btn" onclick="openAddModal()"><i class="fas fa-plus"></i> Add Slot</button>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card"><i class="fas fa-parking"></i><div><h2 th:text="${totalCount}">0</h2><p>Total Slots</p></div></div>
+            <div class="stat-card"><i class="fas fa-check-circle"></i><div><h2 th:text="${availableCount}">0</h2><p>Available</p></div></div>
+            <div class="stat-card"><i class="fas fa-car"></i><div><h2 th:text="${occupiedCount}">0</h2><p>Occupied</p></div></div>
+            <div class="stat-card"><i class="fas fa-clock"></i><div><h2 th:text="${reservedCount}">0</h2><p>Reserved</p></div></div>
+        </div>
+
+        <div th:if="${#lists.isEmpty(slots)}" style="text-align:center;padding:60px;color:var(--text-muted);">
+            <i class="fas fa-parking" style="font-size:48px;display:block;margin-bottom:16px;opacity:0.2;"></i>
+            No parking slots added yet. Click <strong>Add Slot</strong> to get started.
+        </div>
+
+        <div class="parking-grid">
+            <div th:each="s : ${slots}"
+                 class="parking-slot"
+                 th:classappend="${#strings.toLowerCase(s.status)}">
+                <div class="slot-icon">
+                    <span th:text="${s.vehicleType == 'Bike' ? '🏍️' : (s.vehicleType == 'Truck' ? '🚛' : '🚗')}">🚗</span>
+                </div>
+                <div class="slot-number" th:text="${s.slotNumber}">P1</div>
+                <span class="badge" th:classappend="${#strings.toLowerCase(s.status)}" th:text="${s.status}">—</span>
+                <div class="slot-info" th:if="${s.assignedTo != null and !#strings.isEmpty(s.assignedTo)}">
+                    👤 <span th:text="${s.assignedTo}">—</span>
+                </div>
+                <div class="slot-info" th:if="${s.vehicleNumber != null and !#strings.isEmpty(s.vehicleNumber)}">
+                    🔢 <span th:text="${s.vehicleNumber}">—</span>
+                </div>
+                <div class="slot-info" th:if="${s.apartmentNumber != null and !#strings.isEmpty(s.apartmentNumber)}">
+                    🏠 Apt <span th:text="${s.apartmentNumber}">—</span>
+                </div>
+                <div class="slot-info">
+                    Type: <span th:text="${s.slotType != null ? s.slotType : '—'}">—</span>
+                </div>
+                <div class="slot-actions">
+                    <button class="btn-edit-sm"
+                            th:attr="data-id=${s.id},data-slot=${s.slotNumber},data-type=${s.slotType},data-status=${s.status},data-assigned=${s.assignedTo},data-apt=${s.apartmentNumber},data-vehicle=${s.vehicleNumber},data-vtype=${s.vehicleType}"
+                            onclick="openEditModal(this)">
+                        <i class="fas fa-pen"></i> Edit
+                    </button>
+                    <form th:action="@{/parking/delete/{id}(id=${s.id})}" method="post" style="display:inline;" onsubmit="return confirm('Delete this slot?')">
+                        <button type="submit" class="btn-delete-sm"><i class="fas fa-trash"></i></button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- Add Modal -->
+<div class="modal-overlay" id="addModal">
+    <div class="modal">
+        <h2>🚗 Add Parking Slot</h2>
+        <form th:action="@{/parking/add}" method="post">
+            <input type="text" name="slotNumber" placeholder="Slot Number (e.g. P1, B-12)" required>
+            <select name="slotType">
+                <option value="">-- Slot Type --</option>
+                <option value="Open">Open</option>
+                <option value="Covered">Covered</option>
+                <option value="Basement">Basement</option>
+            </select>
+            <select name="vehicleType">
+                <option value="">-- Vehicle Type --</option>
+                <option value="Car">Car</option>
+                <option value="Bike">Bike</option>
+                <option value="Truck">Truck</option>
+            </select>
+            <select name="status">
+                <option value="Available">Available</option>
+                <option value="Occupied">Occupied</option>
+                <option value="Reserved">Reserved</option>
+            </select>
+            <input type="text" name="assignedTo" placeholder="Assigned To (Tenant Name)">
+            <input type="text" name="apartmentNumber" placeholder="Apartment Number">
+            <input type="text" name="vehicleNumber" placeholder="Vehicle Number (e.g. MH12AB1234)">
+            <div class="modal-btns">
+                <button type="button" class="btn-cancel" onclick="closeAddModal()">Cancel</button>
+                <button type="submit" class="btn-save">Save</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Edit Modal -->
+<div class="modal-overlay" id="editModal">
+    <div class="modal">
+        <h2>✏️ Edit Parking Slot</h2>
+        <form th:action="@{/parking/edit}" method="post">
+            <input type="hidden" id="editId" name="id">
+            <input type="text" id="editSlot" name="slotNumber" placeholder="Slot Number" required>
+            <select id="editType" name="slotType">
+                <option value="">-- Slot Type --</option>
+                <option value="Open">Open</option>
+                <option value="Covered">Covered</option>
+                <option value="Basement">Basement</option>
+            </select>
+            <select id="editVtype" name="vehicleType">
+                <option value="">-- Vehicle Type --</option>
+                <option value="Car">Car</option>
+                <option value="Bike">Bike</option>
+                <option value="Truck">Truck</option>
+            </select>
+            <select id="editStatus" name="status">
+                <option value="Available">Available</option>
+                <option value="Occupied">Occupied</option>
+                <option value="Reserved">Reserved</option>
+            </select>
+            <input type="text" id="editAssigned" name="assignedTo" placeholder="Assigned To">
+            <input type="text" id="editApt" name="apartmentNumber" placeholder="Apartment Number">
+            <input type="text" id="editVehicle" name="vehicleNumber" placeholder="Vehicle Number">
+            <div class="modal-btns">
+                <button type="button" class="btn-cancel" onclick="closeEditModal()">Cancel</button>
+                <button type="submit" class="btn-save">Save</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function openAddModal(){document.getElementById('addModal').classList.add('active');}
+    function closeAddModal(){document.getElementById('addModal').classList.remove('active');}
+    function closeEditModal(){document.getElementById('editModal').classList.remove('active');}
+
+    function openEditModal(btn) {
+        document.getElementById('editId').value = btn.getAttribute('data-id');
+        document.getElementById('editSlot').value = btn.getAttribute('data-slot') || '';
+        document.getElementById('editType').value = btn.getAttribute('data-type') || '';
+        document.getElementById('editVtype').value = btn.getAttribute('data-vtype') || '';
+        document.getElementById('editStatus').value = btn.getAttribute('data-status') || 'Available';
+        document.getElementById('editAssigned').value = btn.getAttribute('data-assigned') || '';
+        document.getElementById('editApt').value = btn.getAttribute('data-apt') || '';
+        document.getElementById('editVehicle').value = btn.getAttribute('data-vehicle') || '';
+        document.getElementById('editModal').classList.add('active');
+    }
+</script>
+</body>
+</html>
