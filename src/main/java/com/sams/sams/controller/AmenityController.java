@@ -19,7 +19,30 @@ public class AmenityController {
     @Autowired private TenantRepository tenantRepository;
     @Autowired private UserRepository userRepository;
 
-    // Admin - manage amenities
+    private Tenant findTenant(String username) {
+        try {
+            User user = userRepository.findByUsername(username).orElse(null);
+            if (user != null && user.getTenantId() != null)
+                return tenantRepository.findById(user.getTenantId()).orElse(null);
+
+            Tenant t = tenantRepository.findAll().stream()
+                    .filter(x -> x.getName() != null && x.getName().equalsIgnoreCase(username))
+                    .findFirst().orElse(null);
+            if (t != null) return t;
+
+            t = tenantRepository.findAll().stream()
+                    .filter(x -> x.getPhone() != null && x.getPhone().equalsIgnoreCase(username))
+                    .findFirst().orElse(null);
+            if (t != null) return t;
+
+            return tenantRepository.findAll().stream()
+                    .filter(x -> x.getEmail() != null && x.getEmail().equalsIgnoreCase(username))
+                    .findFirst().orElse(null);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     @GetMapping("/amenities")
     public String amenities(Model model) {
         List<Amenity> amenities = amenityRepository.findAll();
@@ -30,7 +53,7 @@ public class AmenityController {
         model.addAttribute("activeAmenities", amenityRepository.countByStatus("Active"));
         model.addAttribute("totalBookings", bookings.size());
         model.addAttribute("pendingBookings", amenityBookingRepository.countByStatus("Pending"));
-        model.addAttribute("activePage", "amenities");
+        model.addAttribute("activePage", "amenities-page");
         return "amenities";
     }
 
@@ -67,16 +90,12 @@ public class AmenityController {
         return "redirect:/amenities";
     }
 
-    // Tenant - book amenities
     @GetMapping("/my-amenities")
     public String myAmenities(HttpSession session, Model model) {
         String username = (String) session.getAttribute("username");
         if (username == null) return "redirect:/login";
 
-        User user = userRepository.findByUsername(username).orElse(null);
-        Tenant tenant = null;
-        if (user != null && user.getTenantId() != null)
-            tenant = tenantRepository.findById(user.getTenantId()).orElse(null);
+        Tenant tenant = findTenant(username);
 
         List<AmenityBooking> myBookings = tenant != null
                 ? amenityBookingRepository.findByApartmentNumber(tenant.getApartmentNumber())
@@ -85,7 +104,7 @@ public class AmenityController {
         model.addAttribute("amenities", amenityRepository.findAll());
         model.addAttribute("myBookings", myBookings);
         model.addAttribute("tenant", tenant);
-        model.addAttribute("activePage", "amenities");
+        model.addAttribute("activePage", "amenities-tenant");
         return "my-amenities";
     }
 
@@ -95,10 +114,7 @@ public class AmenityController {
                               @RequestParam String timeSlot,
                               HttpSession session) {
         String username = (String) session.getAttribute("username");
-        User user = userRepository.findByUsername(username).orElse(null);
-        Tenant tenant = null;
-        if (user != null && user.getTenantId() != null)
-            tenant = tenantRepository.findById(user.getTenantId()).orElse(null);
+        Tenant tenant = findTenant(username);
 
         if (tenant != null) {
             AmenityBooking booking = new AmenityBooking();

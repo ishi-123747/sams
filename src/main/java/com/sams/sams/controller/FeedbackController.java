@@ -2,10 +2,10 @@ package com.sams.sams.controller;
 
 import com.sams.sams.model.Feedback;
 import com.sams.sams.model.Tenant;
+import com.sams.sams.model.User;
 import com.sams.sams.repository.FeedbackRepository;
 import com.sams.sams.repository.TenantRepository;
 import com.sams.sams.repository.UserRepository;
-import com.sams.sams.model.User;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -22,7 +22,30 @@ public class FeedbackController {
     @Autowired private TenantRepository tenantRepository;
     @Autowired private UserRepository userRepository;
 
-    // Admin view
+    private Tenant findTenant(String username) {
+        try {
+            User user = userRepository.findByUsername(username).orElse(null);
+            if (user != null && user.getTenantId() != null)
+                return tenantRepository.findById(user.getTenantId()).orElse(null);
+
+            Tenant t = tenantRepository.findAll().stream()
+                    .filter(x -> x.getName() != null && x.getName().equalsIgnoreCase(username))
+                    .findFirst().orElse(null);
+            if (t != null) return t;
+
+            t = tenantRepository.findAll().stream()
+                    .filter(x -> x.getPhone() != null && x.getPhone().equalsIgnoreCase(username))
+                    .findFirst().orElse(null);
+            if (t != null) return t;
+
+            return tenantRepository.findAll().stream()
+                    .filter(x -> x.getEmail() != null && x.getEmail().equalsIgnoreCase(username))
+                    .findFirst().orElse(null);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     @GetMapping("/feedback")
     public String adminFeedback(Model model) {
         List<Feedback> all = feedbackRepository.findAll();
@@ -37,17 +60,12 @@ public class FeedbackController {
         return "feedback";
     }
 
-    // Tenant submit feedback
     @GetMapping("/my-feedback")
     public String myFeedback(HttpSession session, Model model) {
         String username = (String) session.getAttribute("username");
         if (username == null) return "redirect:/login";
 
-        User user = userRepository.findByUsername(username).orElse(null);
-        Tenant tenant = null;
-        if (user != null && user.getTenantId() != null) {
-            tenant = tenantRepository.findById(user.getTenantId()).orElse(null);
-        }
+        Tenant tenant = findTenant(username);
 
         List<Feedback> myFeedbacks = tenant != null
                 ? feedbackRepository.findByApartmentNumber(tenant.getApartmentNumber())
@@ -65,11 +83,7 @@ public class FeedbackController {
                                  @RequestParam String category,
                                  HttpSession session) {
         String username = (String) session.getAttribute("username");
-        User user = userRepository.findByUsername(username).orElse(null);
-        Tenant tenant = null;
-        if (user != null && user.getTenantId() != null) {
-            tenant = tenantRepository.findById(user.getTenantId()).orElse(null);
-        }
+        Tenant tenant = findTenant(username);
 
         if (tenant != null) {
             Feedback fb = new Feedback();
