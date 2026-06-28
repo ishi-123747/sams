@@ -22,28 +22,49 @@ public class LostFoundController {
     @Autowired private TenantRepository tenantRepository;
     @Autowired private UserRepository userRepository;
 
+    private Tenant findTenant(String username) {
+        try {
+            User user = userRepository.findByUsername(username).orElse(null);
+            if (user != null && user.getTenantId() != null)
+                return tenantRepository.findById(user.getTenantId()).orElse(null);
+
+            // fallback: match by name
+            return tenantRepository.findAll().stream()
+                    .filter(t -> t.getName() != null && t.getName().equalsIgnoreCase(username))
+                    .findFirst().orElse(null);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     @GetMapping("/lost-found")
     public String lostFound(HttpSession session, Model model) {
         String username = (String) session.getAttribute("username");
         if (username == null) return "redirect:/login";
 
-        List<LostFound> all = lostFoundRepository.findAll();
-        model.addAttribute("items", all);
-        model.addAttribute("lostItems", lostFoundRepository.findByType("Lost"));
-        model.addAttribute("foundItems", lostFoundRepository.findByType("Found"));
-        model.addAttribute("lostCount", lostFoundRepository.countByType("Lost"));
-        model.addAttribute("foundCount", lostFoundRepository.countByType("Found"));
-        model.addAttribute("resolvedCount", lostFoundRepository.countByStatus("Resolved"));
-        model.addAttribute("activePage", "lostfound-page");
+        try {
+            List<LostFound> all = lostFoundRepository.findAll();
+            model.addAttribute("items", all);
+            model.addAttribute("lostItems", lostFoundRepository.findByType("Lost"));
+            model.addAttribute("foundItems", lostFoundRepository.findByType("Found"));
+            model.addAttribute("lostCount", lostFoundRepository.countByType("Lost"));
+            model.addAttribute("foundCount", lostFoundRepository.countByType("Found"));
+            model.addAttribute("resolvedCount", lostFoundRepository.countByStatus("Resolved"));
+            model.addAttribute("activePage", "lostfound-page");
 
-        // Pre-fill tenant info if tenant
-        String role = (String) session.getAttribute("role");
-        if ("TENANT".equalsIgnoreCase(role)) {
-            User user = userRepository.findByUsername(username).orElse(null);
-            Tenant tenant = null;
-            if (user != null && user.getTenantId() != null)
-                tenant = tenantRepository.findById(user.getTenantId()).orElse(null);
-            model.addAttribute("tenant", tenant);
+            String role = (String) session.getAttribute("role");
+            if ("TENANT".equalsIgnoreCase(role)) {
+                Tenant tenant = findTenant(username);
+                model.addAttribute("tenant", tenant);
+            }
+        } catch (Exception e) {
+            model.addAttribute("items", List.of());
+            model.addAttribute("lostItems", List.of());
+            model.addAttribute("foundItems", List.of());
+            model.addAttribute("lostCount", 0);
+            model.addAttribute("foundCount", 0);
+            model.addAttribute("resolvedCount", 0);
+            model.addAttribute("activePage", "lostfound-page");
         }
 
         return "lost-found";
@@ -57,22 +78,24 @@ public class LostFoundController {
                           @RequestParam String contactPhone,
                           HttpSession session) {
         String username = (String) session.getAttribute("username");
-        User user = userRepository.findByUsername(username).orElse(null);
-        Tenant tenant = null;
-        if (user != null && user.getTenantId() != null)
-            tenant = tenantRepository.findById(user.getTenantId()).orElse(null);
 
-        LostFound item = new LostFound();
-        item.setType(type);
-        item.setItemName(itemName);
-        item.setDescription(description);
-        item.setLocation(location);
-        item.setContactPhone(contactPhone);
-        item.setReportedBy(tenant != null ? tenant.getName() : username);
-        item.setApartmentNumber(tenant != null ? tenant.getApartmentNumber() : "—");
-        item.setReportedDate(LocalDate.now().toString());
-        item.setStatus("Open");
-        lostFoundRepository.save(item);
+        try {
+            Tenant tenant = findTenant(username);
+
+            LostFound item = new LostFound();
+            item.setType(type);
+            item.setItemName(itemName);
+            item.setDescription(description);
+            item.setLocation(location);
+            item.setContactPhone(contactPhone);
+            item.setReportedBy(tenant != null ? tenant.getName() : username);
+            item.setApartmentNumber(tenant != null ? tenant.getApartmentNumber() : "—");
+            item.setReportedDate(LocalDate.now().toString());
+            item.setStatus("Open");
+            lostFoundRepository.save(item);
+        } catch (Exception e) {
+            // log and continue
+        }
 
         return "redirect:/lost-found";
     }
