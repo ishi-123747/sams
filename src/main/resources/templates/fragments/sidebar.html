@@ -34,6 +34,9 @@
             <li th:classappend="${activePage == 'staff-page'} ? 'sidebar-active'">
                 <a th:href="@{/staff}"><i class="fas fa-hard-hat"></i> Staff</a>
             </li>
+            <li th:classappend="${activePage == 'visitors-admin'} ? 'sidebar-active'">
+                <a th:href="@{/visitors}"><i class="fas fa-door-open"></i> Visitors</a>
+            </li>
 
             <!-- Money -->
             <li th:classappend="${activePage == 'billing'} ? 'sidebar-active'">
@@ -113,7 +116,9 @@
             <li th:classappend="${activePage == 'amenities-tenant'} ? 'sidebar-active'">
                 <a th:href="@{/my-amenities}"><i class="fas fa-swimming-pool"></i> Book Amenity</a>
             </li>
-
+            <li th:classappend="${activePage == 'visitors-tenant'} ? 'sidebar-active'">
+                <a th:href="@{/my-visitors}"><i class="fas fa-door-open"></i> My Visitors</a>
+            </li>
             <!-- Community -->
             <li th:classappend="${activePage == 'feedback'} ? 'sidebar-active'">
                 <a th:href="@{/my-feedback}"><i class="fas fa-star"></i> My Feedback</a>

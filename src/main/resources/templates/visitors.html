@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <script th:src="@{/js/theme.js}"></script>
+    <meta charset="UTF-8">
+    <title>Visitor Management | SAMS</title>
+    <link rel="stylesheet" th:href="@{/css/sams-global.css}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:var(--modal-overlay);z-index:1000;justify-content:center;align-items:center;}
+        .modal-overlay.active{display:flex;}
+        .modal{background:var(--surface-bg);color:var(--text-body);border-radius:12px;padding:30px;width:420px;max-width:90%;}
+        .modal h2{margin-bottom:20px;color:var(--text-heading);}
+        .modal input{width:100%;padding:12px;margin-bottom:12px;border:1px solid var(--input-border);border-radius:8px;font-size:14px;box-sizing:border-box;background:var(--surface-bg);color:var(--text-body);}
+        .otp-input{font-size:28px;text-align:center;letter-spacing:10px;font-weight:700;}
+        .modal-btns{display:flex;gap:10px;justify-content:flex-end;margin-top:10px;}
+        .btn-cancel{padding:10px 20px;border:1px solid var(--input-border);border-radius:8px;background:var(--surface-bg);color:var(--text-body);cursor:pointer;}
+        .btn-save{padding:10px 20px;border:none;border-radius:8px;background:#4f46e5;color:#fff;cursor:pointer;}
+        .otp-verify-box{background:linear-gradient(135deg,#4f46e5,#7c3aed);border-radius:16px;padding:28px;color:#fff;margin-bottom:24px;display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;}
+        .otp-verify-box h3{margin:0 0 6px;font-size:18px;}
+        .otp-verify-box p{margin:0;opacity:0.85;font-size:13px;}
+        .otp-verify-form{display:flex;gap:10px;}
+        .otp-verify-form input{padding:12px 16px;border-radius:10px;border:none;font-size:20px;letter-spacing:6px;text-align:center;width:140px;}
+        .otp-verify-form button{padding:12px 22px;border-radius:10px;border:none;background:#fff;color:#4f46e5;font-weight:700;cursor:pointer;}
+        table{width:100%;border-collapse:collapse;}
+        th,td{padding:12px;text-align:left;border-bottom:1px solid var(--input-border);font-size:13px;}
+        th{color:var(--text-muted);font-weight:600;}
+        .badge{padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;display:inline-block;}
+        .pending{background:#fef9c3;color:#ca8a04;}
+        .checkedin{background:#dcfce7;color:#16a34a;}
+        .checkedout{background:#e0e7ff;color:#4338ca;}
+        .cancelled{background:#fee2e2;color:#dc2626;}
+        .type-tag{font-size:10px;padding:2px 8px;border-radius:10px;background:#f3f4f6;color:#6b7280;}
+        .btn-checkout{background:#e0e7ff;color:#4338ca;border:none;padding:5px 10px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;}
+        .btn-del{background:#f3f4f6;color:#6b7280;border:none;padding:5px 8px;border-radius:6px;cursor:pointer;font-size:11px;}
+        .section-title{font-size:16px;font-weight:700;color:var(--text-heading);margin:24px 0 14px;}
+    </style>
+</head>
+<body>
+<div class="container">
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+    <main class="main-content">
+        <div class="topbar">
+            <div><h1>🚪 Visitor Management</h1><p>Gate entry log and visitor approvals</p></div>
+            <button class="add-btn" onclick="document.getElementById('walkinModal').classList.add('active')">
+                <i class="fas fa-user-plus"></i> Walk-in Visitor
+            </button>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card"><i class="fas fa-users"></i><div><h2 th:text="${totalCount}">0</h2><p>Total Logged</p></div></div>
+            <div class="stat-card"><i class="fas fa-clock"></i><div><h2 th:text="${pendingCount}">0</h2><p>Awaiting Check-in</p></div></div>
+            <div class="stat-card"><i class="fas fa-door-open"></i><div><h2 th:text="${insideCount}">0</h2><p>Currently Inside</p></div></div>
+            <div class="stat-card"><i class="fas fa-door-closed"></i><div><h2 th:text="${checkedOutCount}">0</h2><p>Checked Out</p></div></div>
+        </div>
+
+        <div class="otp-verify-box">
+            <div>
+                <h3>🔑 Verify Visitor OTP</h3>
+                <p>Ask the visitor for their 4-digit code from the tenant and enter it below</p>
+            </div>
+            <form class="otp-verify-form" th:action="@{/visitors/verify-otp}" method="post">
+                <input type="text" name="otpCode" maxlength="4" placeholder="0000" required>
+                <button type="submit"><i class="fas fa-check"></i> Check In</button>
+            </form>
+        </div>
+
+        <div class="section-title">Visitor Log</div>
+        <div style="background:var(--surface-bg);border-radius:14px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+            <div th:if="${#lists.isEmpty(visitors)}" style="text-align:center;padding:30px;color:var(--text-muted);">No visitors logged yet.</div>
+            <table th:if="${!#lists.isEmpty(visitors)}">
+                <thead>
+                <tr><th>Visitor</th><th>Phone</th><th>Purpose</th><th>Apt</th><th>Type</th><th>Check-in</th><th>Check-out</th><th>Status</th><th>Actions</th></tr>
+                </thead>
+                <tbody>
+                <tr th:each="v : ${visitors}">
+                    <td th:text="${v.visitorName}">—</td>
+                    <td th:text="${v.visitorPhone}">—</td>
+                    <td th:text="${v.purpose}">—</td>
+                    <td th:text="${v.apartmentNumber}">—</td>
+                    <td><span class="type-tag" th:text="${v.entryType}">—</span></td>
+                    <td th:text="${v.checkInTime != null ? v.checkInTime : '—'}">—</td>
+                    <td th:text="${v.checkOutTime != null ? v.checkOutTime : '—'}">—</td>
+                    <td><span class="badge" th:classappend="${#strings.toLowerCase(v.status)}" th:text="${v.status}">—</span></td>
+                    <td style="display:flex;gap:6px;">
+                        <form th:if="${v.status == 'CheckedIn'}" th:action="@{/visitors/checkout/{id}(id=${v.id})}" method="post">
+                            <button type="submit" class="btn-checkout"><i class="fas fa-sign-out-alt"></i> Check Out</button>
+                        </form>
+                        <form th:action="@{/visitors/delete/{id}(id=${v.id})}" method="post" onsubmit="return confirm('Delete this record?')">
+                            <button type="submit" class="btn-del"><i class="fas fa-trash"></i></button>
+                        </form>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+</div>
+
+<!-- Walk-in Modal -->
+<div class="modal-overlay" id="walkinModal">
+    <div class="modal">
+        <h2>🚪 Register Walk-in Visitor</h2>
+        <form th:action="@{/visitors/walkin}" method="post">
+            <input type="text" name="visitorName" placeholder="Visitor Name" required>
+            <input type="tel" name="visitorPhone" placeholder="Phone Number" required>
+            <input type="text" name="purpose" placeholder="Purpose (e.g. Delivery, Guest, Plumber)" required>
+            <input type="text" name="apartmentNumber" placeholder="Visiting Apartment No." required>
+            <div class="modal-btns">
+                <button type="button" class="btn-cancel" onclick="document.getElementById('walkinModal').classList.remove('active')">Cancel</button>
+                <button type="submit" class="btn-save">Check In Now</button>
+            </div>
+        </form>
+    </div>
+</div>
+</body>
+</html>

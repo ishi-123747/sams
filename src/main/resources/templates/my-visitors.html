@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <script th:src="@{/js/theme.js}"></script>
+    <meta charset="UTF-8">
+    <title>My Visitors | SAMS</title>
+    <link rel="stylesheet" th:href="@{/css/sams-global.css}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .page-box{background:var(--surface-bg);border-radius:14px;padding:28px;box-shadow:0 2px 8px rgba(0,0,0,0.08);margin-bottom:24px;}
+        .page-box h3{margin:0 0 18px;color:var(--text-heading);font-size:16px;}
+        .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+        .form-grid input{padding:11px;border:1px solid var(--input-border);border-radius:8px;font-size:14px;background:var(--surface-bg);color:var(--text-body);box-sizing:border-box;}
+        .submit-btn{padding:11px 24px;background:#4f46e5;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600;margin-top:14px;}
+        .visitor-card{display:flex;align-items:center;justify-content:space-between;padding:16px 0;border-bottom:1px solid var(--input-border);flex-wrap:wrap;gap:10px;}
+        .visitor-card:last-child{border-bottom:none;}
+        .visitor-name{font-weight:700;color:var(--text-heading);font-size:14px;}
+        .visitor-meta{font-size:12px;color:var(--text-muted);margin-top:3px;}
+        .otp-display{background:#ede9fe;color:#4f46e5;font-size:22px;font-weight:800;letter-spacing:6px;padding:8px 18px;border-radius:10px;}
+        .badge{padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;}
+        .pending{background:#fef9c3;color:#ca8a04;}
+        .checkedin{background:#dcfce7;color:#16a34a;}
+        .checkedout{background:#e0e7ff;color:#4338ca;}
+        .cancelled{background:#fee2e2;color:#dc2626;}
+        .btn-cancel-visit{background:#fee2e2;color:#dc2626;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px;}
+    </style>
+</head>
+<body>
+<div class="container">
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+    <main class="main-content">
+        <div class="topbar">
+            <div><h1>🚪 My Visitors</h1><p>Pre-approve guests with a one-time entry code</p></div>
+        </div>
+
+        <div class="page-box">
+            <h3><i class="fas fa-user-plus" style="color:#4f46e5;margin-right:8px;"></i>Pre-Approve a Visitor</h3>
+            <form th:action="@{/my-visitors/preapprove}" method="post">
+                <div class="form-grid">
+                    <input type="text" name="visitorName" placeholder="Visitor Name" required>
+                    <input type="tel" name="visitorPhone" placeholder="Visitor Phone" required>
+                    <input type="text" name="purpose" placeholder="Purpose (e.g. Friend visit, Delivery)" required>
+                    <input type="date" name="expectedDate" required>
+                    <input type="time" name="expectedTime" required>
+                </div>
+                <button type="submit" class="submit-btn"><i class="fas fa-key"></i> Generate Entry Code</button>
+            </form>
+        </div>
+
+        <div class="page-box">
+            <h3><i class="fas fa-history" style="color:#4f46e5;margin-right:8px;"></i>Visitor History</h3>
+            <div th:if="${#lists.isEmpty(myVisitors)}" style="text-align:center;padding:20px;color:var(--text-muted);">No visitors registered yet.</div>
+            <div th:each="v : ${myVisitors}" class="visitor-card">
+                <div>
+                    <div class="visitor-name" th:text="${v.visitorName}">—</div>
+                    <div class="visitor-meta">
+                        <span th:text="${v.purpose}">—</span> ·
+                        <span th:if="${v.expectedDate != null}" th:text="${v.expectedDate} + ' ' + ${v.expectedTime}">—</span>
+                        <span th:if="${v.checkInTime != null}"> · In: <span th:text="${v.checkInTime}">—</span></span>
+                        <span th:if="${v.checkOutTime != null}"> · Out: <span th:text="${v.checkOutTime}">—</span></span>
+                    </div>
+                </div>
+                <div style="display:flex;align-items:center;gap:14px;">
+                    <span th:if="${v.status == 'Pending'}" class="otp-display" th:text="${v.otpCode}">0000</span>
+                    <span class="badge" th:classappend="${#strings.toLowerCase(v.status)}" th:text="${v.status}">—</span>
+                    <form th:if="${v.status == 'Pending'}" th:action="@{/my-visitors/cancel/{id}(id=${v.id})}" method="post" onsubmit="return confirm('Cancel this visitor pass?')">
+                        <button type="submit" class="btn-cancel-visit"><i class="fas fa-times"></i> Cancel</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+</body>
+</html>
