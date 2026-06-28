@@ -23,6 +23,30 @@ public class VisitorController {
 
     private static final DateTimeFormatter TS_FMT = DateTimeFormatter.ofPattern("dd MMM yyyy, hh:mm a");
 
+    private Tenant findTenant(String username) {
+        try {
+            User user = userRepository.findByUsername(username).orElse(null);
+            if (user != null && user.getTenantId() != null)
+                return tenantRepository.findById(user.getTenantId()).orElse(null);
+
+            Tenant t = tenantRepository.findAll().stream()
+                    .filter(x -> x.getName() != null && x.getName().equalsIgnoreCase(username))
+                    .findFirst().orElse(null);
+            if (t != null) return t;
+
+            t = tenantRepository.findAll().stream()
+                    .filter(x -> x.getPhone() != null && x.getPhone().equalsIgnoreCase(username))
+                    .findFirst().orElse(null);
+            if (t != null) return t;
+
+            return tenantRepository.findAll().stream()
+                    .filter(x -> x.getEmail() != null && x.getEmail().equalsIgnoreCase(username))
+                    .findFirst().orElse(null);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     // ===== ADMIN / SECURITY VIEW =====
     @GetMapping("/visitors")
     public String visitors(Model model) {
@@ -36,7 +60,6 @@ public class VisitorController {
         return "visitors";
     }
 
-    // Security verifies OTP and checks visitor in
     @PostMapping("/visitors/verify-otp")
     public String verifyOtp(@RequestParam String otpCode, Model model) {
         Visitor v = visitorRepository.findByOtpCodeAndStatus(otpCode, "Pending").orElse(null);
@@ -48,7 +71,6 @@ public class VisitorController {
         return "redirect:/visitors";
     }
 
-    // Walk-in visitor (no pre-approval) registered directly by security/admin
     @PostMapping("/visitors/walkin")
     public String walkIn(@RequestParam String visitorName,
                          @RequestParam String visitorPhone,
@@ -101,10 +123,7 @@ public class VisitorController {
         String username = (String) session.getAttribute("username");
         if (username == null) return "redirect:/login";
 
-        User user = userRepository.findByUsername(username).orElse(null);
-        Tenant tenant = null;
-        if (user != null && user.getTenantId() != null)
-            tenant = tenantRepository.findById(user.getTenantId()).orElse(null);
+        Tenant tenant = findTenant(username);
 
         List<Visitor> myVisitors = tenant != null
                 ? visitorRepository.findByApartmentNumber(tenant.getApartmentNumber())
@@ -124,10 +143,7 @@ public class VisitorController {
                              @RequestParam String expectedTime,
                              HttpSession session) {
         String username = (String) session.getAttribute("username");
-        User user = userRepository.findByUsername(username).orElse(null);
-        Tenant tenant = null;
-        if (user != null && user.getTenantId() != null)
-            tenant = tenantRepository.findById(user.getTenantId()).orElse(null);
+        Tenant tenant = findTenant(username);
 
         if (tenant != null) {
             Visitor v = new Visitor();
